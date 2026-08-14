@@ -111,6 +111,10 @@ def _error(code: str, message: str, status_code: int = 400) -> HTTPException:
     return HTTPException(status_code=status_code, detail={"code": code, "message": message})
 
 
+class _StepPersistenceError(Exception):
+    """Marker: an original audit step failed to persist before the run aborted."""
+
+
 def _review_pack_path(settings: ApiSettings, relative_path: str | None) -> Path | None:
     if relative_path is None:
         return None
@@ -424,7 +428,7 @@ def create_app(
                 },
             }
 
-        def persist_setup_failure(error: dict[str, str]) -> dict[str, Any]:
+        def persist_setup_failure(error: dict[str, str], *, original_step_failure: bool = False) -> dict[str, Any]:
             traces, assertions, external_call_count, estimated_tokens, environment_drift = load_agent_step_evidence(
                 settings.db_path,
                 run_id=run_id,
@@ -442,7 +446,8 @@ def create_app(
                 estimated_tokens=estimated_tokens,
                 environment_drift=environment_drift,
             )
-            step_persistence_incomplete = False
+            # 原始 step 已确认丢失时，即使本次 provisional 落库成功，也必须如实标记审计不完整。
+            step_persistence_incomplete = original_step_failure
             try:
                 append_agent_step(
                     settings.db_path,
@@ -472,14 +477,27 @@ def create_app(
                 )
                 client = DeepSeekClient(api_key, model=live_model)
             set_agent_run_status(settings.db_path, run_id=run_id, status="running")
+
+            def persist_step(event: dict[str, Any]) -> None:
+                try:
+                    append_agent_step(settings.db_path, run_id=run_id, step_no=int(event["step_no"]), event=event)
+                except Exception:  # noqa: BLE001 - any step write failure is an audit integrity break.
+                    raise _StepPersistenceError from None
+
             result = run_agent_text(
                 snapshot,
                 client=client,
                 case_ids=case_ids,
-                on_event=lambda event: append_agent_step(settings.db_path, run_id=run_id, step_no=int(event["step_no"]), event=event),
+                on_event=persist_step,
             )
             report = report_from_result(result)
             update_agent_run(settings.db_path, run_id=run_id, status=result.status, report=report)
+            return _agent_report_response(run_id, report)
+        except _StepPersistenceError:
+            report = persist_setup_failure(
+                {"code": "AGENT_RUN_FAILED", "message": "Agent 运行中止：审计步骤写入失败，已保留已落盘步骤"},
+                original_step_failure=True,
+            )
             return _agent_report_response(run_id, report)
         except DeepSeekError as exc:
             report = persist_setup_failure({"code": exc.code, "message": exc.message})
