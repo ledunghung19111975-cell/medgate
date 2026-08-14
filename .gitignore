@@ -1,0 +1,11 @@
+artifacts/
+.venv/
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+*.key
+local-assets/
+raw-traces/

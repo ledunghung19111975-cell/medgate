@@ -1,0 +1,7 @@
+agents:
+  - key: pretriage-baseline-v1
+    role: baseline
+    display_name: Baseline v1
+  - key: pretriage-candidate-v2
+    role: candidate
+    display_name: Candidate v2
