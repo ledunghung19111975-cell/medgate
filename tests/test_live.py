@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -55,6 +57,12 @@ class FakeDeepSeek:
         self.fail_with = fail_with
         self.fail_on_call = fail_on_call
         self.review_verdict = review_verdict
+        self._calls_lock = threading.Lock()
+
+    def _response_id(self, messages: list[dict[str, str]]) -> str:
+        # 顺序无关：response_id 由消息内容确定性生成，并发/串行下同一调用链结果一致
+        digest = hashlib.sha256(json.dumps(messages, ensure_ascii=False).encode("utf-8")).hexdigest()
+        return "response-" + digest[:8]
 
     def complete(
         self,
@@ -63,11 +71,12 @@ class FakeDeepSeek:
         response_format: dict[str, str] | None = None,
         max_tokens: int = 512,
     ) -> ChatResult:
-        self.calls.append([dict(item) for item in messages])
-        self.max_tokens.append(max_tokens)
+        with self._calls_lock:
+            self.calls.append([dict(item) for item in messages])
+            self.max_tokens.append(max_tokens)
         if self.fail_with and (self.fail_on_call is None or len(self.calls) == self.fail_on_call):
             raise self.fail_with
-        response_id = f"response-{len(self.calls):03d}"
+        response_id = self._response_id(messages)
         if "验证复核员" in messages[0]["content"]:
             content = "{}" if self.malformed_judge else json.dumps({
                 "final_verdict": self.review_verdict,
@@ -110,11 +119,12 @@ class StreamingFakeDeepSeek(FakeDeepSeek):
 
 
 class LiveRunApiTest(unittest.TestCase):
-    def _client(self, fake: FakeDeepSeek, temp_dir: str) -> TestClient:
+    def _client(self, fake: FakeDeepSeek, temp_dir: str, concurrency: int = 1) -> TestClient:
         return TestClient(create_app(
             PROJECT_ROOT,
             Path(temp_dir) / "medgate.sqlite3",
             live_client_factory=lambda: fake,
+            live_concurrency=concurrency,
         ))
 
     def test_live_run_binds_prompts_and_real_outputs(self) -> None:
@@ -735,6 +745,109 @@ class VerificationReviewSemanticsTest(unittest.TestCase):
         parsed = _parse_review(result)
         # 旧格式兼容：violation 缺失时归一化为 None，不抛错
         self.assertIsNone(parsed["verification"][0]["violation"])
+
+
+def _stable_evaluation_snapshot(evaluation: dict) -> dict:
+    """剥离 run 级随机字段（attempt/evaluation id、recording 时间戳与响应元数据），
+    保留参与判定的核心内容，用于并发/串行等价断言。"""
+    judge = dict(evaluation.get("judge_result") or {})
+    judge.pop("recording", None)
+    review = judge.get("review")
+    if isinstance(review, dict):
+        review = dict(review)
+        review.pop("recording", None)
+        judge["review"] = review
+    return {
+        "case_id": evaluation.get("case_id"),
+        "agent_key": evaluation.get("agent_key"),
+        "verdict": evaluation.get("verdict"),
+        "score": evaluation.get("score"),
+        "missing_actions": evaluation.get("missing_actions"),
+        "forbidden_hits": evaluation.get("forbidden_hits"),
+        "raw_output": evaluation.get("raw_output"),
+        "judge_result": judge,
+    }
+
+
+class LiveConcurrencyTest(unittest.TestCase):
+    def test_concurrent_4_matches_serial_1(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            serial_client = TestClient(create_app(
+                PROJECT_ROOT, Path(temp_dir) / "serial.sqlite3",
+                live_client_factory=lambda: FakeDeepSeek(), live_concurrency=1,
+            ))
+            concurrent_client = TestClient(create_app(
+                PROJECT_ROOT, Path(temp_dir) / "concurrent.sqlite3",
+                live_client_factory=lambda: FakeDeepSeek(), live_concurrency=4,
+            ))
+            serial = serial_client.post(
+                "/api/v1/live-runs", headers={"Idempotency-Key": "serial-001"},
+                json={"baseline_prompt": "baseline prompt", "candidate_prompt": "candidate prompt"},
+            )
+            concurrent = concurrent_client.post(
+                "/api/v1/live-runs", headers={"Idempotency-Key": "concurrent-001"},
+                json={"baseline_prompt": "baseline prompt", "candidate_prompt": "candidate prompt"},
+            )
+            self.assertEqual(serial.status_code, 201)
+            self.assertEqual(concurrent.status_code, 201)
+            serial_evals = serial.json()["report"]["evaluations"]
+            concurrent_evals = concurrent.json()["report"]["evaluations"]
+            self.assertEqual(len(serial_evals), len(concurrent_evals))
+            serial_snapshot = [_stable_evaluation_snapshot(item) for item in serial_evals]
+            concurrent_snapshot = [_stable_evaluation_snapshot(item) for item in concurrent_evals]
+            self.assertEqual(serial_snapshot, concurrent_snapshot)
+
+    def test_concurrency_one_keeps_serial_fixture_order(self) -> None:
+        from medgate.assets import load_bundle, select_case_subset
+        from medgate.live import record_live
+        bundle = select_case_subset(load_bundle(PROJECT_ROOT), ["case-001", "case-002", "case-003"])
+        results: list[list[str]] = []
+        for concurrency in (1, 4):
+            fake = FakeDeepSeek()
+            recording = record_live(
+                bundle,
+                baseline_prompt="baseline prompt",
+                candidate_prompt="candidate prompt",
+                model="deepseek-v4-flash",
+                client=fake,
+                concurrency=concurrency,
+            )
+            results.append([f["fixture_id"] for f in recording.fixtures])
+        self.assertEqual(results[0], results[1])
+
+    def test_budget_exceeded_fails_closed(self) -> None:
+        from medgate.assets import load_bundle, select_case_subset
+        from medgate.deepseek import DeepSeekError
+        from medgate.live import record_live
+        bundle = select_case_subset(load_bundle(PROJECT_ROOT), ["case-001", "case-002", "case-003"])
+        fake = FakeDeepSeek()
+        with self.assertRaises(DeepSeekError) as ctx:
+            record_live(
+                bundle,
+                baseline_prompt="baseline prompt",
+                candidate_prompt="candidate prompt",
+                model="deepseek-v4-flash",
+                client=fake,
+                concurrency=4,
+                budget=1,
+            )
+        self.assertEqual(ctx.exception.code, "LIVE_BUDGET_EXCEEDED")
+
+    def test_concurrent_external_call_count_matches_expected(self) -> None:
+        from medgate.assets import load_bundle, select_case_subset
+        from medgate.live import record_live
+        bundle = select_case_subset(load_bundle(PROJECT_ROOT), ["case-001", "case-002", "case-003"])
+        fake = FakeDeepSeek()
+        recording = record_live(
+            bundle,
+            baseline_prompt="baseline prompt",
+            candidate_prompt="candidate prompt",
+            model="deepseek-v4-flash",
+            client=fake,
+            concurrency=4,
+        )
+        expected = sum(len(case["input"]["turns"]) + 1 for case in bundle.cases) * 2
+        self.assertGreaterEqual(recording.external_call_count, expected)
 
 
 if __name__ == "__main__":

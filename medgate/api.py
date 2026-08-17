@@ -108,12 +108,13 @@ class AgentRunV2Request(BaseModel):
 class ApiSettings:
     project_root: Path
     db_path: Path
+    live_concurrency: int = 4
 
 
-def _settings(project_root: Path | None, db_path: Path | None) -> ApiSettings:
+def _settings(project_root: Path | None, db_path: Path | None, live_concurrency: int = 4) -> ApiSettings:
     root = (project_root or Path(__file__).resolve().parents[1]).resolve()
     database = (db_path or root / "artifacts" / "medgate.sqlite3").resolve()
-    return ApiSettings(project_root=root, db_path=database)
+    return ApiSettings(project_root=root, db_path=database, live_concurrency=live_concurrency)
 
 
 def _error(code: str, message: str, status_code: int = 400) -> HTTPException:
@@ -216,8 +217,13 @@ def create_app(
     live_client_factory: Callable[[], ChatClient] | None = None,
     agent_client_factory: Callable[[], ChatClient] | None = None,
     live_model: str = DEEPSEEK_MODEL,
+    live_concurrency: int | None = None,
 ) -> FastAPI:
-    settings = _settings(project_root, db_path)
+    concurrency_value = live_concurrency
+    if concurrency_value is None:
+        concurrency_value = int(os.getenv("MEDGATE_LIVE_CONCURRENCY", "4"))
+    concurrency_value = max(1, min(concurrency_value, 16))
+    settings = _settings(project_root, db_path, live_concurrency=concurrency_value)
     app = FastAPI(title="MedGate API", version="0.1.0")
     app.state.medgate = settings
     app.state.live_lock = threading.Lock()
@@ -735,6 +741,7 @@ def create_app(
                     client=client,
                     on_event=on_event,
                     should_cancel=should_cancel,
+                    concurrency=settings.live_concurrency,
                 )
                 report = run_evaluation(
                     bundle,

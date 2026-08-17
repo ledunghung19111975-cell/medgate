@@ -47,6 +47,74 @@ class FakeStreamingResponse:
         return iter(self.lines)
 
 
+class RetrySequenceHttpxClient:
+    """按序列返回预置状态码（429 前导 + 最终 200），记录调用次数，模拟 429 重试。"""
+
+    sequence: list[int] = []
+    calls: list[dict] = []
+
+    def __init__(self, *, base_url: str, headers: dict[str, str], timeout: httpx.Timeout) -> None:
+        pass
+
+    def post(self, path: str, *, json: dict) -> httpx.Response:
+        type(self).calls.append({"path": path, "json": json})
+        index = len(type(self).calls) - 1
+        status = type(self).sequence[min(index, len(type(self).sequence) - 1)]
+        if status == 429:
+            return httpx.Response(429, headers={"retry-after": "0.01"})
+        return httpx.Response(200, json={
+            "id": f"response-{index}",
+            "model": "deepseek-v4-flash",
+            "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "重试后成功"}}],
+        })
+
+    def close(self) -> None:
+        pass
+
+
+class DeepSeekRetryTest(unittest.TestCase):
+    def setUp(self) -> None:
+        RetrySequenceHttpxClient.sequence = []
+        RetrySequenceHttpxClient.calls = []
+
+    def test_429_retries_then_succeeds_with_on_retry_callback(self) -> None:
+        RetrySequenceHttpxClient.sequence = [429, 429, 200]
+        retries: list[int] = []
+        with patch("medgate.deepseek.httpx.Client", RetrySequenceHttpxClient):
+            client = DeepSeekClient("test-key", max_retries=4, retry_base_delay=0.01, on_retry=lambda attempt: retries.append(attempt))
+            try:
+                result = client.complete(messages=[{"role": "user", "content": "你好"}])
+            finally:
+                client.close()
+        self.assertEqual(result.content, "重试后成功")
+        self.assertEqual(len(RetrySequenceHttpxClient.calls), 3)
+        self.assertEqual(retries, [1, 2])
+
+    def test_429_exhausts_retries_and_fails_closed(self) -> None:
+        RetrySequenceHttpxClient.sequence = [429, 429, 429, 429, 429]
+        with patch("medgate.deepseek.httpx.Client", RetrySequenceHttpxClient):
+            client = DeepSeekClient("test-key", max_retries=3, retry_base_delay=0.01)
+            try:
+                with self.assertRaises(DeepSeekError) as ctx:
+                    client.complete(messages=[{"role": "user", "content": "你好"}])
+            finally:
+                client.close()
+        self.assertEqual(ctx.exception.code, "DEEPSEEK_RATE_LIMITED")
+        self.assertEqual(len(RetrySequenceHttpxClient.calls), 4)
+
+    def test_max_retries_zero_disables_retry(self) -> None:
+        RetrySequenceHttpxClient.sequence = [429, 200]
+        with patch("medgate.deepseek.httpx.Client", RetrySequenceHttpxClient):
+            client = DeepSeekClient("test-key", max_retries=0, retry_base_delay=0.01)
+            try:
+                with self.assertRaises(DeepSeekError) as ctx:
+                    client.complete(messages=[{"role": "user", "content": "你好"}])
+            finally:
+                client.close()
+        self.assertEqual(ctx.exception.code, "DEEPSEEK_RATE_LIMITED")
+        self.assertEqual(len(RetrySequenceHttpxClient.calls), 1)
+
+
 class FakeStreamingHttpxClient(FakeHttpxClient):
     stream_lines = [
         'data: {"id":"stream-001","model":"deepseek-v4-flash","choices":[{"delta":{"content":"流式"},"finish_reason":null}]}',

@@ -1626,13 +1626,16 @@
 
       function updateLiveProgressView() {
         const progress = state.liveRun.progress;
-        const roleLabel = progress.role === "baseline" ? "Baseline" : progress.role === "candidate" ? "Candidate" : "Judge";
         const scopeLabel = progress.scope === "judge" ? "结构化 Judge" : "回答生成";
         const label = document.getElementById("run-progress-label");
         const detailNode = document.getElementById("run-progress-detail");
         const output = document.getElementById("run-stream-output");
         if (label) label.textContent = progress.phase + (progress.caseId ? " · " + progress.caseId : "");
-        if (detailNode) detailNode.textContent = roleLabel + (progress.scope ? " · " + scopeLabel : "") + (progress.turn ? " · 第 " + progress.turn + " 轮" : "") + " · 外部调用 " + progress.completedCalls + " / " + progress.totalCalls + " · 版本病例 " + progress.completedItems + " / " + progress.totalItems;
+        // 并发执行下 completed_calls 不保证单调，进度以病例完成数为主驱动，外部调用数仅作展示
+        if (detailNode) detailNode.textContent = "已完成病例 " + progress.completedItems + " / " + progress.totalItems
+          + (progress.scope ? " · " + scopeLabel : "")
+          + (progress.concurrency ? " · 并发 " + progress.concurrency + " 路" : "")
+          + " · 外部调用 " + progress.completedCalls;
         if (output) output.textContent = progress.output || "等待模型返回增量内容…";
       }
 
@@ -1644,6 +1647,7 @@
           progress.totalItems = Number(data.total_items || 0);
           progress.completedCalls = 0;
           progress.completedItems = 0;
+          progress.concurrency = Number(data.concurrency || 1);
           progress.output = "";
         } else if (eventType === "call_started") {
           progress.phase = data.scope === "judge" ? "正在进行结构化 Judge" : "正在生成模型回答";

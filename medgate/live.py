@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
@@ -168,9 +170,12 @@ def _complete_with_stream(
     max_tokens: int = 512,
     on_chunk: Callable[[ChatDelta], None] | None = None,
     should_cancel: Callable[[], bool] | None = None,
+    before_call: Callable[[], None] | None = None,
 ) -> ChatResult:
     if should_cancel and should_cancel():
         raise LiveRunCancelled()
+    if before_call:
+        before_call()
     stream = getattr(client, "stream", None)
     if not callable(stream):
         result = client.complete(messages=messages, response_format=response_format, max_tokens=max_tokens)
@@ -361,6 +366,7 @@ def run_verification_review(
     client: ChatClient,
     on_event: LiveEventCallback | None = None,
     should_cancel: Callable[[], bool] | None = None,
+    before_call: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
     """对规则层与一审 Judge 冲突的条目执行验证式复审。返回复审结果（含最终裁决与核验表）。"""
     _emit(on_event, "review_started", case_id=case["case_id"])
@@ -370,6 +376,7 @@ def run_verification_review(
         response_format=JUDGE_RESPONSE_FORMAT,
         max_tokens=JUDGE_MAX_TOKENS,
         should_cancel=should_cancel,
+        before_call=before_call,
         on_chunk=lambda chunk: _emit(
             on_event,
             "token",
@@ -404,6 +411,176 @@ def _judge_messages(case: dict[str, Any], raw_output: dict[str, Any]) -> list[di
     ]
 
 
+def _record_case(
+    case: dict[str, Any],
+    *,
+    role: str,
+    agent_key: str,
+    system_prompt: str,
+    model: str,
+    client: ChatClient,
+    on_event: LiveEventCallback | None,
+    should_cancel: Callable[[], bool] | None,
+    before_call: Callable[[], None] | None,
+    count_reader: Callable[[], int],
+    total_items: int,
+    recorded_at: str,
+) -> dict[str, Any]:
+    """执行单个病例-版本侧的完整链路：多轮 Agent 调用 → Judge → 冲突时复审。返回 fixture。
+
+    并发执行的最小单元：case 内 turns/Judge/复审有依赖必须串行；不同 case 完全独立。
+    """
+    messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+    raw_turns: list[dict[str, Any]] = []
+    response_ids: list[str] = []
+    response_models: list[str] = []
+    for user_text in case["input"]["turns"]:
+        messages.append({"role": "user", "content": str(user_text)})
+        raw_turns.append({"role": "user", "text": str(user_text), "flags": []})
+        turn_number = len(raw_turns) // 2 + 1
+        _emit(
+            on_event,
+            "call_started",
+            scope="agent",
+            role=role,
+            agent_key=agent_key,
+            case_id=case["case_id"],
+            turn=turn_number,
+            completed_calls=count_reader(),
+            total_calls=total_items,
+        )
+        response = _complete_with_stream(
+            client,
+            messages=messages,
+            max_tokens=AGENT_MAX_TOKENS,
+            should_cancel=should_cancel,
+            before_call=before_call,
+            on_chunk=lambda chunk: _emit(
+                on_event,
+                "token",
+                scope="agent",
+                role=role,
+                agent_key=agent_key,
+                case_id=case["case_id"],
+                turn=turn_number,
+                text=chunk.content,
+            ),
+        )
+        assistant_text = _require_agent_output(response)
+        messages.append({"role": "assistant", "content": assistant_text})
+        raw_turns.append({"role": "assistant", "text": assistant_text, "flags": []})
+        if response.response_id:
+            response_ids.append(response.response_id)
+        response_models.append(response.model)
+        _emit(
+            on_event,
+            "call_completed",
+            scope="agent",
+            role=role,
+            agent_key=agent_key,
+            case_id=case["case_id"],
+            turn=turn_number,
+            completed_calls=count_reader(),
+            total_calls=total_items,
+        )
+
+    raw_output = {"turns": raw_turns}
+    _emit(
+        on_event,
+        "call_started",
+        scope="judge",
+        role=role,
+        agent_key=agent_key,
+        case_id=case["case_id"],
+        turn=0,
+        completed_calls=count_reader(),
+        total_calls=total_items,
+    )
+    judge_response = _complete_with_stream(
+        client,
+        messages=_judge_messages(case, raw_output),
+        response_format=JUDGE_RESPONSE_FORMAT,
+        max_tokens=JUDGE_MAX_TOKENS,
+        should_cancel=should_cancel,
+        before_call=before_call,
+        on_chunk=lambda chunk: _emit(
+            on_event,
+            "token",
+            scope="judge",
+            role=role,
+            agent_key=agent_key,
+            case_id=case["case_id"],
+            turn=0,
+            text=chunk.content,
+        ),
+    )
+    _emit(
+        on_event,
+        "call_completed",
+        scope="judge",
+        role=role,
+        agent_key=agent_key,
+        case_id=case["case_id"],
+        turn=0,
+        completed_calls=count_reader(),
+        total_calls=total_items,
+    )
+    fixture = {
+        "fixture_id": f"{case['case_id']}__{agent_key}",
+        "case_id": case["case_id"],
+        "agent_key": agent_key,
+        "fixture_version": "live-1.0.0",
+        "source_type": "self_authored_synthetic",
+        "license_ref": "project-owned",
+        "raw_output": raw_output,
+        "judge_result": _parse_judge(judge_response, str(case["priority"])),
+        "recording": {
+            "recorded_at": recorded_at,
+            "requested_model": model,
+            "response_models": sorted(set(response_models)),
+            "prompt_hash": prompt_hash(system_prompt),
+            "response_ids": response_ids,
+            "judge_response_id": judge_response.response_id,
+            "judge_response_model": judge_response.model,
+        },
+        "content_status": "live_recorded_unreviewed",
+    }
+    # 验证式复审（方案 A）：先判规则层，规则与一审 Judge 均为硬判定且冲突时，
+    # 触发引用核验，用复审 final_verdict 改写 judge_result——使后续 run_evaluation
+    # 的 verdict、gate、报告哈希全部基于复审后结果，保持落盘/快照/响应一致。
+    rule_evaluation = evaluate_fixture(case, fixture)
+    rule_verdict = rule_evaluation.get("rule_verdict")
+    judge_verdict = rule_evaluation.get("judge_verdict")
+    if (
+        "RULE_JUDGE_CONFLICT" in rule_evaluation.get("reason_codes", [])
+        and rule_verdict in {"pass", "fail"}
+        and judge_verdict in {"pass", "fail"}
+    ):
+        review = run_verification_review(
+            case=case,
+            raw_output=raw_output,
+            judge_result=fixture["judge_result"],
+            rule_result={
+                "missing_actions": rule_evaluation.get("missing_actions", []),
+                "forbidden_hits": rule_evaluation.get("forbidden_hits", []),
+                "rule_verdict": rule_verdict,
+            },
+            client=client,
+            on_event=on_event,
+            should_cancel=should_cancel,
+            before_call=before_call,
+        )
+        final_verdict = review.get("final_verdict")
+        if final_verdict in {"pass", "fail", "needs_review"}:
+            # 复审作为最高机器层：final_verdict 直接决定该条目最终判定，
+            # 覆盖一审 Judge 与规则层合并结果（evaluate_fixture 见 review_applied 分支）。
+            fixture["judge_result"]["verdict"] = final_verdict
+            fixture["judge_result"]["review"] = review
+            fixture["judge_result"]["review_applied"] = True
+            fixture["judge_result"]["reviewed_by"] = "verification_review_v1"
+    return fixture
+
+
 def record_live(
     bundle: AssetBundle,
     *,
@@ -413,7 +590,16 @@ def record_live(
     client: ChatClient,
     on_event: LiveEventCallback | None = None,
     should_cancel: Callable[[], bool] | None = None,
+    concurrency: int = 1,
+    budget: int | None = None,
 ) -> LiveRecording:
+    """病例级并发录制：按 (role, case) 固定顺序提交全部任务到线程池。
+
+    - 提交顺序 = `for role: for case`，聚合按 (role, case) 重排 → 并发=1 时与串行逐字节一致。
+    - 预算/取消检查下沉到每次模型调用前（before_call 钩子），池层无法拦 in-flight 任务。
+    - 任一任务失败或预算超限 → 整体失败（失败关闭语义），不部分落库。
+    - `concurrency=1` 即完全回退到原串行行为。
+    """
     if not baseline_prompt.strip() or not candidate_prompt.strip():
         raise ValueError("Baseline 与 Candidate 提示词均不能为空")
     if baseline_prompt == candidate_prompt:
@@ -424,175 +610,49 @@ def record_live(
         "candidate": candidate_prompt,
     }
     agent_by_role = {agent["role"]: agent for agent in bundle.agents}
-    fixtures: list[dict[str, Any]] = []
-    call_count = 0
     recorded_at = utc_now()
     total_items = len(bundle.cases) * 2
     total_calls = sum(len(case["input"]["turns"]) + 1 for case in bundle.cases) * 2
-    completed_items = 0
-    _emit(
-        on_event,
-        "run_started",
-        case_count=len(bundle.cases),
-        total_items=total_items,
-        total_calls=total_calls,
-        model=model,
-    )
+    # 预算估算：每 case-version = turns 次 agent 调用 + judge + 复审（条件触发，按最多 1 次计入）；
+    # 预算为封顶上限（含重试余量 2 倍），用于防失控而非精确计费。
+    estimated_calls = sum(len(case["input"]["turns"]) + 2 for case in bundle.cases) * 2
+    budget = budget if budget is not None else estimated_calls * 2
+    count: dict[str, int] = {"n": 0}
+    count_lock = threading.Lock()
+    cancel_flag = threading.Event()
+    errors: list[BaseException] = []
+    results: dict[tuple[str, str], dict[str, Any]] = {}
 
-    for role in ("baseline", "candidate"):
+    def count_reader() -> int:
+        with count_lock:
+            return count["n"]
+
+    def before_call() -> None:
+        with count_lock:
+            if count["n"] >= budget:
+                raise DeepSeekError("LIVE_BUDGET_EXCEEDED", f"本次运行的模型调用数超过预算上限 {budget}，已终止", 503)
+            count["n"] += 1
+
+    def run_one(role: str, case: dict[str, Any]) -> None:
+        if cancel_flag.is_set():
+            return
         agent = agent_by_role[role]
-        system_prompt = prompts[role]
-        for case in bundle.cases:
-            messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
-            raw_turns: list[dict[str, Any]] = []
-            response_ids: list[str] = []
-            response_models: list[str] = []
-            for user_text in case["input"]["turns"]:
-                messages.append({"role": "user", "content": str(user_text)})
-                raw_turns.append({"role": "user", "text": str(user_text), "flags": []})
-                turn_number = len(raw_turns) // 2 + 1
-                _emit(
-                    on_event,
-                    "call_started",
-                    scope="agent",
-                    role=role,
-                    agent_key=agent["key"],
-                    case_id=case["case_id"],
-                    turn=turn_number,
-                    completed_calls=call_count,
-                    total_calls=total_calls,
-                )
-                response = _complete_with_stream(
-                    client,
-                    messages=messages,
-                    max_tokens=AGENT_MAX_TOKENS,
-                    should_cancel=should_cancel,
-                    on_chunk=lambda chunk: _emit(
-                        on_event,
-                        "token",
-                        scope="agent",
-                        role=role,
-                        agent_key=agent["key"],
-                        case_id=case["case_id"],
-                        turn=turn_number,
-                        text=chunk.content,
-                    ),
-                )
-                call_count += 1
-                assistant_text = _require_agent_output(response)
-                messages.append({"role": "assistant", "content": assistant_text})
-                raw_turns.append({"role": "assistant", "text": assistant_text, "flags": []})
-                if response.response_id:
-                    response_ids.append(response.response_id)
-                response_models.append(response.model)
-                _emit(
-                    on_event,
-                    "call_completed",
-                    scope="agent",
-                    role=role,
-                    agent_key=agent["key"],
-                    case_id=case["case_id"],
-                    turn=turn_number,
-                    completed_calls=call_count,
-                    total_calls=total_calls,
-                )
-
-            raw_output = {"turns": raw_turns}
-            _emit(
-                on_event,
-                "call_started",
-                scope="judge",
+        try:
+            fixture = _record_case(
+                case,
                 role=role,
                 agent_key=agent["key"],
-                case_id=case["case_id"],
-                turn=0,
-                completed_calls=call_count,
-                total_calls=total_calls,
-            )
-            judge_response = _complete_with_stream(
-                client,
-                messages=_judge_messages(case, raw_output),
-                response_format=JUDGE_RESPONSE_FORMAT,
-                max_tokens=JUDGE_MAX_TOKENS,
+                system_prompt=prompts[role],
+                model=model,
+                client=client,
+                on_event=on_event,
                 should_cancel=should_cancel,
-                on_chunk=lambda chunk: _emit(
-                    on_event,
-                    "token",
-                    scope="judge",
-                    role=role,
-                    agent_key=agent["key"],
-                    case_id=case["case_id"],
-                    turn=0,
-                    text=chunk.content,
-                ),
+                before_call=before_call,
+                count_reader=count_reader,
+                total_items=total_items,
+                recorded_at=recorded_at,
             )
-            call_count += 1
-            _emit(
-                on_event,
-                "call_completed",
-                scope="judge",
-                role=role,
-                agent_key=agent["key"],
-                case_id=case["case_id"],
-                turn=0,
-                completed_calls=call_count,
-                total_calls=total_calls,
-            )
-            fixture = {
-                "fixture_id": f"{case['case_id']}__{agent['key']}",
-                "case_id": case["case_id"],
-                "agent_key": agent["key"],
-                "fixture_version": "live-1.0.0",
-                "source_type": "self_authored_synthetic",
-                "license_ref": "project-owned",
-                "raw_output": raw_output,
-                "judge_result": _parse_judge(judge_response, str(case["priority"])),
-                "recording": {
-                    "recorded_at": recorded_at,
-                    "requested_model": model,
-                    "response_models": sorted(set(response_models)),
-                    "prompt_hash": prompt_hash(system_prompt),
-                    "response_ids": response_ids,
-                    "judge_response_id": judge_response.response_id,
-                    "judge_response_model": judge_response.model,
-                },
-                "content_status": "live_recorded_unreviewed",
-            }
-            # 验证式复审（方案 A）：先判规则层，规则与一审 Judge 均为硬判定且冲突时，
-            # 触发引用核验，用复审 final_verdict 改写 judge_result——使后续 run_evaluation
-            # 的 verdict、gate、报告哈希全部基于复审后结果，保持落盘/快照/响应一致。
-            rule_evaluation = evaluate_fixture(case, fixture)
-            rule_verdict = rule_evaluation.get("rule_verdict")
-            judge_verdict = rule_evaluation.get("judge_verdict")
-            if (
-                "RULE_JUDGE_CONFLICT" in rule_evaluation.get("reason_codes", [])
-                and rule_verdict in {"pass", "fail"}
-                and judge_verdict in {"pass", "fail"}
-            ):
-                review = run_verification_review(
-                    case=case,
-                    raw_output=raw_output,
-                    judge_result=fixture["judge_result"],
-                    rule_result={
-                        "missing_actions": rule_evaluation.get("missing_actions", []),
-                        "forbidden_hits": rule_evaluation.get("forbidden_hits", []),
-                        "rule_verdict": rule_verdict,
-                    },
-                    client=client,
-                    on_event=on_event,
-                    should_cancel=should_cancel,
-                )
-                call_count += 1
-                final_verdict = review.get("final_verdict")
-                if final_verdict in {"pass", "fail", "needs_review"}:
-                    # 复审作为最高机器层：final_verdict 直接决定该条目最终判定，
-                    # 覆盖一审 Judge 与规则层合并结果（evaluate_fixture 见 review_applied 分支）。
-                    fixture["judge_result"]["verdict"] = final_verdict
-                    fixture["judge_result"]["review"] = review
-                    fixture["judge_result"]["review_applied"] = True
-                    fixture["judge_result"]["reviewed_by"] = "verification_review_v1"
-            fixtures.append(fixture)
-            completed_items += 1
+            results[(role, case["case_id"])] = fixture
             _emit(
                 on_event,
                 "item_completed",
@@ -600,13 +660,40 @@ def record_live(
                 agent_key=agent["key"],
                 case_id=case["case_id"],
                 fixture_id=fixture["fixture_id"],
-                completed_items=completed_items,
+                completed_items=len(results),
                 total_items=total_items,
-                completed_calls=call_count,
+                completed_calls=count_reader(),
                 total_calls=total_calls,
                 verdict=fixture["judge_result"]["verdict"],
                 score=fixture["judge_result"]["score"],
             )
+        except BaseException as exc:
+            cancel_flag.set()
+            errors.append(exc)
+
+    _emit(
+        on_event,
+        "run_started",
+        case_count=len(bundle.cases),
+        total_items=total_items,
+        total_calls=total_calls,
+        model=model,
+        concurrency=max(1, concurrency),
+        budget=budget,
+    )
+
+    with ThreadPoolExecutor(max_workers=max(1, concurrency)) as pool:
+        for role in ("baseline", "candidate"):
+            for case in bundle.cases:
+                pool.submit(run_one, role, case)
+
+    if errors:
+        # 取消优先：浏览器断开（LiveRunCancelled）优先于其他异常，保证断开 → cancelled 可靠
+        cancels = [error for error in errors if isinstance(error, LiveRunCancelled)]
+        raise cancels[0] if cancels else errors[0]
+
+    ordered_keys = [(role, case["case_id"]) for role in ("baseline", "candidate") for case in bundle.cases]
+    fixtures = [results[key] for key in ordered_keys]
 
     artifact = {
         "mode": "live",
@@ -622,7 +709,7 @@ def record_live(
     return LiveRecording(
         fixtures=fixtures,
         fixture_hash=canonical_hash(fixtures),
-        external_call_count=call_count,
+        external_call_count=count_reader(),
         artifact=artifact,
         judge_hash=live_judge_hash(model),
     )
