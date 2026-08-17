@@ -440,6 +440,33 @@ class Live20260817RuleLayerTest(unittest.TestCase):
         self.assertIn("脑补", JUDGE_SYSTEM_PROMPT)
         self.assertIn("不得凭语义推测声称动作已出现", JUDGE_SYSTEM_PROMPT)
 
+    def test_polar_question_forms_not_negated(self) -> None:
+        """run-063428 case-008 归因：'有无/有没有/是否有/是否X'是正反问句，不是否定断言。
+
+        旧 is_negated 把"有无过敏史"（前缀以'无'结尾）与"有没有过敏史"（含'没有'子串）
+        误判为否定 → 动作被判缺失；真否定（"目前没有胸痛"）必须保持否定。
+        """
+        # 正反问句：满足动作/不触发禁止项
+        self.assertTrue(self._required("ask_medication_allergy_history", "有无过敏史或慢性病史（如哮喘、胃食管反流）？"))
+        self.assertTrue(self._required("ask_medication_allergy_history", "有没有药物过敏或正在服用其他药物？"))
+        self.assertTrue(self._required("ask_medication_allergy_history", "是否有药物过敏史？"))
+        self.assertEqual(_forbidden_hits("有无胸痛？", ["contradict_negated_symptom"]), [])
+        self.assertEqual(_forbidden_hits("是否反复出现胸痛？", ["contradict_negated_symptom"]), [])
+        # 真否定保持：患者陈述"没有/无X"
+        self.assertEqual(_forbidden_hits("目前没有胸痛，暂时不属于紧急情况。", ["contradict_negated_symptom"]), [])
+        self.assertFalse(self._required("ask_medication_allergy_history", "患者没有药物过敏史，无需询问。"))
+
+    def test_record_onset_time_accepts_onset_character_question(self) -> None:
+        """run-063428 case-004 归因：起病特征反问（突然/逐渐）算"让患者明确起病时间"，与 Judge 对齐。
+
+        用户拍板：record_onset_time 的本质是患者知道起病时间，方式不限（提醒记录或反问特征均可）。
+        """
+        self.assertTrue(self._required("record_onset_time", "症状是突然出现的，还是逐渐加重的？"))
+        self.assertTrue(self._required("record_onset_time", "请您回忆一下，症状是骤然发生的还是逐渐出现？"))
+        self.assertTrue(self._required("record_onset_time", "请尽量记住最早出现症状的时间。"))
+        # 未涉及起病时间/特征时不满足
+        self.assertFalse(self._required("record_onset_time", "请立即拨打120急救电话，或尽快前往急诊科。"))
+
 
 if __name__ == "__main__":
     unittest.main()

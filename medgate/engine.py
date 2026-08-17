@@ -21,7 +21,15 @@ ACTION_REQUIREMENTS: dict[str, dict[str, Any]] = {
     "urgent_escalation": {"any": [r"120", r"急诊", r"立即(?:就医|处理)", r"紧急"], "reject_negated": True},
     "avoid_self_driving": {"any": [r"不要自行驾车", r"不要自行开车", r"不要.*驾车"]},
     "record_onset_time": {
-        "any": [r"(?:记录|记下|记好|记住).{0,12}(?:时间|发病|起病)", r"记录.*(?:开始|起始|正常时间)", r"记下.*(?:开始|起始|正常时间)"],
+        # 本质：让患者明确起病时间，方式不限——提醒记录（记录/记下/记住…时间），
+        # 或反问起病特征（突然/骤然出现、逐渐加重）均可，后者与语义 Judge 对齐（run-063428 case-004）。
+        "any": [
+            r"(?:记录|记下|记好|记住).{0,12}(?:时间|发病|起病)",
+            r"记录.*(?:开始|起始|正常时间)",
+            r"记下.*(?:开始|起始|正常时间)",
+            r"(?:突然|骤然)(?:出现|发生|发作)",
+            r"逐渐(?:加重|出现)",
+        ],
         "reject_negated": True,
     },
     "pediatric_evaluation": {"any": [r"儿科", r"急诊", r"带孩子.{0,10}(?:医院|就诊|就医)"], "reject_negated": True},
@@ -180,13 +188,18 @@ def is_negated(text: str, match: re.Match[str]) -> bool:
     suffix = text[match.end() : match.end() + 16]
     for separator in ("。", "！", "？", "；", "，", ";", ",", "\n"):
         suffix = suffix.split(separator, 1)[0]
+    # 正反问句防护：'有没有X''有无X'是询问句而非否定断言——旧逻辑会把"有没有过敏史"
+    # （含"没有"子串）与"有无过敏史"（前缀以"无"结尾）误判为否定（run-063428 case-008）。
+    # 先剥离这两种问句形式再判否定；"是否有/是否"不与否定词冲突，无需处理（"无法判断
+    # 是否需要急诊"仍判否定）。
+    neg_prefix = re.sub(r"有没有|有无", "", prefix)
     return (
-        any(token in prefix for token in NEGATION_TOKENS)
-        or prefix.endswith(("没", "无"))
+        any(token in neg_prefix for token in NEGATION_TOKENS)
+        or neg_prefix.endswith(("没", "无"))
         or any(token in suffix for token in POST_NEGATION_TOKENS)
         or bool(re.search(r"(?:不|没|未|无|别|不用|无需|不必|不需要|不建议|不推荐|不一定|不认为|不确定|可以先不|先不)[^。！？；，,]{0,10}(?:去|前往|就医|急诊|必要|需要|建议|考虑|观察)", suffix))
         or bool(re.search(r"(?:先观察|观察即可|在家观察|先在家)", suffix))
-        or bool(re.search(r"(?:先|晚点|稍后|过会儿|过一会儿|之后|等一下)[^。！？；，,]{0,10}(?:再|去|前往|就医|急诊)", prefix))
+        or bool(re.search(r"(?:先|晚点|稍后|过会儿|过一会儿|之后|等一下)[^。！？；，,]{0,10}(?:再|去|前往|就医|急诊)", neg_prefix))
     )
 
 
