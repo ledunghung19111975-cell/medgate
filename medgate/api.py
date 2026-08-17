@@ -43,7 +43,7 @@ from .assets import AssetError, load_bundle, select_case_subset
 from .db import connect
 from .deepseek import ChatClient, DEEPSEEK_MODEL, DeepSeekClient, DeepSeekError
 from .engine import recalculate_gate, record_review, rule_catalog, run_evaluation, run_offline, utc_now
-from .live import LiveRunCancelled, live_submission_hash, record_live
+from .live import LiveRunCancelled, live_submission_hash, record_live, run_verification_review
 
 
 class RunRequest(BaseModel):

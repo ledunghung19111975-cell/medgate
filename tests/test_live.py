@@ -37,6 +37,7 @@ class FakeDeepSeek:
         unsafe_candidate: bool = True,
         fail_with: DeepSeekError | None = None,
         fail_on_call: int | None = None,
+        review_verdict: str = "fail",
     ) -> None:
         self.calls: list[list[dict[str, str]]] = []
         self.max_tokens: list[int] = []
@@ -46,6 +47,7 @@ class FakeDeepSeek:
         self.unsafe_candidate = unsafe_candidate
         self.fail_with = fail_with
         self.fail_on_call = fail_on_call
+        self.review_verdict = review_verdict
 
     def complete(
         self,
@@ -59,6 +61,20 @@ class FakeDeepSeek:
         if self.fail_with and (self.fail_on_call is None or len(self.calls) == self.fail_on_call):
             raise self.fail_with
         response_id = f"response-{len(self.calls):03d}"
+        if "验证复核员" in messages[0]["content"]:
+            content = "{}" if self.malformed_judge else json.dumps({
+                "final_verdict": self.review_verdict,
+                "final_evidence": "验证复审完成：规则层命中/一审证据与回答原文核验完毕。",
+                "verification": [
+                    {"claim": "一审 Judge 证据核验",
+                     "quote": "如有危险信号请立即就医或拨打 120",
+                     "found": True},
+                    {"claim": "规则层命中核验",
+                     "quote": "NOT_FOUND",
+                     "found": False},
+                ],
+            }, ensure_ascii=False)
+            return ChatResult(content, response_id, "deepseek-v4-flash", "stop")
         if "质量裁判" in messages[0]["content"]:
             content = "{}" if self.malformed_judge else json.dumps({
                 "verdict": "pass",
@@ -105,11 +121,13 @@ class LiveRunApiTest(unittest.TestCase):
             self.assertEqual(response.status_code, 201)
             body = response.json()
             self.assertEqual(body["gate"]["state"], "BLOCKED")
-            self.assertEqual(body["summary"]["external_call_count"], 50)
+            # 51 次外部调用 = 26 agent + 24 judge + 1 验证式复审
+            # （case-003 候选版：规则 fail vs Judge pass 硬冲突，触发引用核验）。
+            self.assertEqual(body["summary"]["external_call_count"], 51)
             self.assertEqual(len(body["evaluations"]), 24)
-            self.assertEqual(len(fake.calls), 50)
+            self.assertEqual(len(fake.calls), 51)
             self.assertEqual(fake.max_tokens.count(1024), 26)
-            self.assertEqual(fake.max_tokens.count(700), 24)
+            self.assertEqual(fake.max_tokens.count(700), 25)
             provenance = body["provenance"]
             self.assertEqual(provenance["model"], "deepseek-v4-flash")
             self.assertEqual(provenance["params"], LIVE_PARAMS)
@@ -122,12 +140,70 @@ class LiveRunApiTest(unittest.TestCase):
             )
             self.assertIn("urgent_escalation", candidate_case["missing_actions"])
             self.assertIn("胃部不适", candidate_case["raw_output"]["turns"][-1]["text"])
+            # 验证式复审：case-003 候选版是规则 fail vs Judge pass 硬冲突，Fake 复审判 fail，
+            # 复审作为最高机器层裁决维持 fail（规则层缺失真实存在），并写入 review 证据链。
+            self.assertIn("review", candidate_case["judge_result"])
+            self.assertEqual(candidate_case["judge_result"]["review"]["final_verdict"], "fail")
+            self.assertEqual(candidate_case["judge_result"]["reviewed_by"], "verification_review_v1")
+            self.assertEqual(candidate_case["verdict"], "fail")
+            self.assertIn("REVIEW_APPLIED", candidate_case["reason_codes"])
             second_turn_calls = [
                 messages for messages in fake.calls
                 if messages[-1].get("content", "").startswith("体温 38 度")
             ]
             self.assertEqual(len(second_turn_calls), 2)
             self.assertTrue(any(item["role"] == "assistant" for item in second_turn_calls[0][:-1]))
+
+    def test_verification_review_overrides_rule_side_error(self) -> None:
+        """验证式复审能纠正规则层误报（方案 A 核心）：复审 final_verdict=pass 时，
+        即使规则层命中（missing/forbidden），最终 verdict 也以复审为准。
+
+        模拟 run-063428 case-008 场景：规则层把'有无过敏史'误判缺失，复审核验原文后判 pass。
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake = FakeDeepSeek(review_verdict="pass")
+            client = self._client(fake, temp_dir)
+            response = client.post(
+                "/api/v1/live-runs",
+                headers={"Idempotency-Key": "live-review-override"},
+                json={"baseline_prompt": "baseline prompt", "candidate_prompt": "candidate prompt"},
+            )
+            self.assertEqual(response.status_code, 201)
+            body = response.json()
+            # SAFE_OUTPUT 下 case-003 候选是唯一硬冲突；复审判 pass 后该条目应为 pass
+            reviewed = [
+                item for item in body["evaluations"]
+                if item["judge_result"].get("reviewed_by") == "verification_review_v1"
+            ]
+            self.assertEqual(len(reviewed), 1)
+            self.assertEqual(reviewed[0]["case_id"], "case-003")
+            self.assertEqual(reviewed[0]["verdict"], "pass")
+            self.assertIn("REVIEW_APPLIED", reviewed[0]["reason_codes"])
+            # 规则层命中仍保留为展示证据，但不再决定成败
+            self.assertTrue(reviewed[0]["missing_actions"] or reviewed[0]["forbidden_hits"])
+
+    def test_verification_review_skips_needs_review_judge(self) -> None:
+        """needs_review（失败关闭）条目不进复审：低置信/异常 Judge 保持原语义。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake = FakeDeepSeek(low_confidence_judge=True, unsafe_candidate=False)
+            client = self._client(fake, temp_dir)
+            response = client.post(
+                "/api/v1/live-runs",
+                headers={"Idempotency-Key": "live-review-skip"},
+                json={"baseline_prompt": "baseline prompt", "candidate_prompt": "candidate prompt"},
+            )
+            self.assertEqual(response.status_code, 201)
+            body = response.json()
+            self.assertEqual(body["gate"]["state"], "REVIEW_REQUIRED")
+            # 低置信 Judge 全为 needs_review，无硬冲突 → 不应有任何复审调用
+            self.assertTrue(all(
+                item["verdict"] == "needs_review"
+                for item in body["evaluations"]
+            ))
+            self.assertFalse(any(
+                "验证复核员" in call[0]["content"]
+                for call in fake.calls
+            ))
 
     def test_live_run_uses_selected_case_subset(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -287,7 +363,8 @@ class LiveRunApiTest(unittest.TestCase):
             self.assertEqual(replay.status_code, 200)
             self.assertTrue(replay.json()["idempotent_replayed"])
             self.assertEqual(replay.json()["provenance"]["run_input_hash"], first_hash)
-            self.assertEqual(len(fake.calls), 50)
+            # 50 次外部调用 + 1 次验证式复审（case-003 候选硬冲突）
+            self.assertEqual(len(fake.calls), 51)
             conflict = client.post(
                 "/api/v1/live-runs",
                 headers=headers,
@@ -295,7 +372,7 @@ class LiveRunApiTest(unittest.TestCase):
             )
             self.assertEqual(conflict.status_code, 409)
             self.assertEqual(conflict.json()["detail"]["code"], "IDEMPOTENCY_CONFLICT")
-            self.assertEqual(len(fake.calls), 50)
+            self.assertEqual(len(fake.calls), 51)
 
     def test_prompt_change_changes_run_input_hash(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
