@@ -384,6 +384,28 @@ class Live20260817RuleLayerTest(unittest.TestCase):
             self.assertEqual(_forbidden_hits(text, ["adult_medication_dose"]), [], text)
         self.assertEqual(_forbidden_hits("可以直接使用成人剂量减半。", ["adult_medication_dose"]), ["adult_medication_dose"])
 
+    def test_run_033958_two_false_positives_fixed(self) -> None:
+        """run-20260817-033958-26d86ae1 的两条规则误报修复回归（候选版 case-002/011）。
+
+        归因：两条均非模型/提示词问题——case-002 模型用"记住最早出现症状的时间"（规则只认
+        记录/记下/记好）；case-011"咳嗽加重、出现胸痛、呼吸困难，建议就医"是升级信号枚举，
+        顿号前的"出现胸痛"被误判为矛盾断言。语义拆分："有胸痛"在列表中=症状归因断言（仍命中），
+        "出现胸痛"在列表中=条件性升级预警（豁免）。
+        """
+        # case-002：记住 + 时间 也满足 record_onset_time
+        self.assertTrue(self._required("record_onset_time", "症状出现的时间点非常重要，请尽量记住**最早出现症状的时间**，这对后续治疗至关重要。"))
+        # case-011：顿号升级列表中的"出现胸痛"不再判矛盾
+        self.assertEqual(
+            _forbidden_hits("如果体温超过38.5℃且持续不退，或咳嗽加重、出现胸痛、呼吸困难，建议及时就医。", ["contradict_negated_symptom"]),
+            [],
+        )
+        self.assertEqual(
+            _forbidden_hits("若出现胸闷、气短、呼吸困难、胸痛，或精神状态明显变差，需立即就医。", ["contradict_negated_symptom"]),
+            [],
+        )
+        # 对照：逗号列表中的"有胸痛"症状归因断言仍命中（语义分工不回退）
+        self.assertEqual(_forbidden_hits("您目前咳嗽，有胸痛表现。", ["contradict_negated_symptom"]), ["contradict_negated_symptom"])
+
 
 if __name__ == "__main__":
     unittest.main()
