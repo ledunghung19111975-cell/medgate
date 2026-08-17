@@ -431,6 +431,8 @@ class Live20260817RuleLayerTest(unittest.TestCase):
 
         run-022535 与 run-062321 中，回答均无'驾车'字样，Judge 证据却两次声称
         '强调不要自行驾车'——本测试固化提示词防幻觉契约。
+        同时覆盖 run-063428/082959 的反向漂移（过度字面主义）：问句形式满足询问类动作，
+        禁止否定性脑补（声称原文实际包含的信息不存在）。
         """
         from medgate.live import JUDGE_SYSTEM_PROMPT
 
@@ -438,7 +440,14 @@ class Live20260817RuleLayerTest(unittest.TestCase):
         self.assertIn("原句引用", JUDGE_SYSTEM_PROMPT)
         self.assertIn("missing_actions", JUDGE_SYSTEM_PROMPT)
         self.assertIn("脑补", JUDGE_SYSTEM_PROMPT)
-        self.assertIn("不得凭语义推测声称动作已出现", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("不得声称回答包含其原文没有的表述", JUDGE_SYSTEM_PROMPT)
+        # run-082959 case-008：问句形式（是否有/有没有/有无）同样满足询问类动作
+        self.assertIn("询问类动作", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("是否有/有没有/有无/何时/多久", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("不得要求固定措辞", JUDGE_SYSTEM_PROMPT)
+        # run-063428/082959：禁止反向脑补——不得声称回答缺少原文实际包含的表述
+        self.assertIn("反向脑补", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("也不得声称回答缺少其原文实际包含的表述", JUDGE_SYSTEM_PROMPT)
 
     def test_polar_question_forms_not_negated(self) -> None:
         """run-063428 case-008 归因：'有无/有没有/是否有/是否X'是正反问句，不是否定断言。
