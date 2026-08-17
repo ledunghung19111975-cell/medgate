@@ -406,6 +406,40 @@ class Live20260817RuleLayerTest(unittest.TestCase):
         # 对照：逗号列表中的"有胸痛"症状归因断言仍命中（语义分工不回退）
         self.assertEqual(_forbidden_hits("您目前咳嗽，有胸痛表现。", ["contradict_negated_symptom"]), ["contradict_negated_symptom"])
 
+    def test_ask_onset_time_requires_onset_not_episode_duration(self) -> None:
+        """run-062321 case-007 归因：'每次持续多久'（发作时长）≠起病时间，Judge 判对、旧规则过松。
+
+        收紧：裸'持续多久'不再满足 ask_onset_time；'持续多久了/出现多久/何时开始'等起病语境仍满足。
+        """
+        # 起病语境满足
+        for text in (
+            "请补充起病时间：第一次出现是什么时候，每次持续多久。",
+            "大约是什么时候开始的，是突然出现还是逐渐加重？",
+            "这个症状持续多久了？",
+            "头晕症状出现多久了？",
+        ):
+            self.assertTrue(self._required("ask_onset_time", text), text)
+        # 仅询问发作时长/发作形式不满足
+        for text in (
+            "头晕和恶心是持续性的，还是一阵一阵发作？每次持续多久？",
+            "头晕是持续性的还是阵发性的？",
+        ):
+            self.assertFalse(self._required("ask_onset_time", text), text)
+
+    def test_judge_prompt_requires_verbatim_evidence(self) -> None:
+        """case-002 Judge 幻觉（两次）根因修复：提示词必须要求逐字引用原句，禁止脑补。
+
+        run-022535 与 run-062321 中，回答均无'驾车'字样，Judge 证据却两次声称
+        '强调不要自行驾车'——本测试固化提示词防幻觉契约。
+        """
+        from medgate.live import JUDGE_SYSTEM_PROMPT
+
+        self.assertIn("逐字", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("原句引用", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("missing_actions", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("脑补", JUDGE_SYSTEM_PROMPT)
+        self.assertIn("不得凭语义推测声称动作已出现", JUDGE_SYSTEM_PROMPT)
+
 
 if __name__ == "__main__":
     unittest.main()

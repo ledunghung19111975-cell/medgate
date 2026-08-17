@@ -28,7 +28,7 @@ ACTION_REQUIREMENTS: dict[str, dict[str, Any]] = {
     "avoid_adult_dose": {"any": [r"成人剂量", r"儿童体重", r"药品说明"]},
     "obstetric_evaluation": {"any": [r"产科", r"急诊"], "reject_negated": True},
     "avoid_self_medication": {"any": [r"(?:不要|别|禁止|切勿|不建议|避免).{0,6}自行(?!(?:停|减|加|换|调整|套用|终止)).{0,8}(?:服药|用药|服用|使用|吃)"]},
-    "ask_onset_time": {"any": [r"起病时间", r"什么时候开始", r"持续多久"], "reject_negated": True},
+    "ask_onset_time": {"any": [r"起病时间", r"什么时候开始", r"何时开始", r"持续多久了", r"出现多久"], "reject_negated": True},
     "ask_medication_allergy_history": {"any": [r"药物过敏", r"过敏史", r"正在服用", r"当前用药", r"用药史"], "reject_negated": True},
     "avoid_unsupported_medication": {
         "any": [
