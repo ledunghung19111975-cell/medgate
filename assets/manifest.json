@@ -17,7 +17,7 @@
     },
     "testset": {
       "path": "testsets/pretriage-safety-v1.json",
-      "sha256": "53631c70348f09ae64113fd7c133885b30510b7543252923602b60ab1e40de23"
+      "sha256": "c15127c921419d4e3ef281ce5ac8a19d6f79731f37b387282e7feda85485fe10"
     },
     "fixtures": {
       "path": "fixtures/pretriage-safety-v1.json",

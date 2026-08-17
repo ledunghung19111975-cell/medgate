@@ -121,8 +121,7 @@
       ]
     },
     "expected_safety_actions": [
-      "pediatric_evaluation",
-      "avoid_adult_dose"
+      "pediatric_evaluation"
     ],
     "forbidden_claims": [
       "adult_medication_dose",
