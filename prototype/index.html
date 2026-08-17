@@ -577,6 +577,9 @@
           <button class="nav-button" data-route="gate">
             <span class="nav-icon">⌁</span><span class="nav-copy"><span class="nav-title">发布门禁</span><span class="nav-caption">报告与 CI 状态</span></span>
           </button>
+          <button class="nav-button" data-route="prompts">
+            <span class="nav-icon">◈</span><span class="nav-copy"><span class="nav-title">提示词版本</span><span class="nav-caption">版本管理与 bad case</span></span>
+          </button>
         </nav>
         <div class="sidebar-spacer"></div>
         <button class="sidebar-settings" data-action="open-settings" type="button">
@@ -602,6 +605,7 @@
       const ASSET_TESTSET = "/assets/testsets/pretriage-safety-v1.json";
       const ASSET_MANIFEST = "/assets/manifest.json";
       const RULES_ENDPOINT = "/api/v1/rules";
+      const PROMPT_VERSIONS_ENDPOINT = "/api/v1/prompt-versions";
       const BASELINE_AGENT = "pretriage-baseline-v1";
       const CANDIDATE_AGENT = "pretriage-candidate-v2";
       const LIVE_RUN_ENDPOINT = "/api/v1/live-runs/stream";
@@ -695,6 +699,14 @@
           idempotencyKey: null,
           requestFingerprint: null,
           requiresNewAttempt: false
+        },
+        prompts: {
+          versions: null,
+          selectedSha: "",
+          badCases: null,
+          saving: false,
+          showSaveForm: false,
+          draft: { name: "", role: "either", note: "", sourceRunId: "" }
         }
       };
 
@@ -859,7 +871,7 @@
       }
 
       const testsetTitle = "预问诊安全集 v1";
-      const routeNames = { overview: "总览", rules: "测评集详情", evaluation: "评测详情", case: "病例详情", gate: "发布门禁" };
+      const routeNames = { overview: "总览", rules: "测评集详情", evaluation: "评测详情", case: "病例详情", gate: "发布门禁", prompts: "提示词版本" };
       const currentRun = () => state.activeRun;
       const runModeLabel = () => "真实调用";
       const hasRun = () => Boolean(state.activeRun && cases.length);
@@ -1403,8 +1415,126 @@
           + "</div>";
       }
 
+      async function loadPromptVersions() {
+        if (state.prompts.versions !== null) return;
+        try {
+          const response = await window.fetch(PROMPT_VERSIONS_ENDPOINT, { headers: { Accept: "application/json" } });
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          const payload = await response.json();
+          state.prompts.versions = (payload.versions || []).slice().reverse();
+          render();
+        } catch (error) {
+          state.prompts.error = String(error && error.message || error);
+          state.prompts.versions = [];
+          render();
+        }
+      }
+
+      async function loadPromptBadCases(sha) {
+        state.prompts.selectedSha = sha;
+        state.prompts.badCases = null;
+        render();
+        try {
+          const response = await window.fetch(PROMPT_VERSIONS_ENDPOINT + "/" + encodeURIComponent(sha) + "/bad-cases", { headers: { Accept: "application/json" } });
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          const payload = await response.json();
+          state.prompts.badCases = payload;
+          render();
+        } catch (error) {
+          showToast("加载 bad case 失败：" + (error && error.message || error));
+          state.prompts.badCases = { runs: [] };
+          render();
+        }
+      }
+
+      async function savePromptVersion() {
+        const draft = state.prompts.draft;
+        const name = (document.getElementById("pv-name")?.value || "").trim();
+        const role = document.getElementById("pv-role")?.value || "either";
+        const note = document.getElementById("pv-note")?.value || "";
+        const sourceRunId = (document.getElementById("pv-source")?.value || "").trim();
+        const text = (document.getElementById("pv-text")?.value || "").replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+        if (!name) { showToast("请填写版本名称"); return; }
+        if (!text && !sourceRunId) { showToast("请填写提示词全文，或填写来源 run ID 从该 run 导入"); return; }
+        if (state.prompts.saving) return;
+        state.prompts.saving = true;
+        try {
+          const response = await window.fetch(PROMPT_VERSIONS_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, role, note, prompt_text: text, source_run_id: sourceRunId || null }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error((payload.detail && payload.detail.message) || "保存失败");
+          }
+          state.prompts.draft = { name: "", role: "either", note: "", sourceRunId: "" };
+          state.prompts.showSaveForm = false;
+          state.prompts.versions = null;
+          showToast("已保存提示词版本 " + name);
+          await loadPromptVersions();
+        } catch (error) {
+          showToast("保存失败：" + (error && error.message || error));
+        } finally {
+          state.prompts.saving = false;
+        }
+      }
+
+      function promptVersionDetailHtml() {
+        const p = state.prompts;
+        if (!p.selectedSha) return "";
+        const selected = (p.versions || []).find((version) => version.sha256 === p.selectedSha);
+        if (!selected) return "";
+        const head = "<section class='section-card' style='margin-top:16px'><div class='section-head'><div><h2>" + escapeHtml(selected.name) + " <span class='mono' style='font-size:12px'>" + escapeHtml(shortHash(selected.sha256)) + "</span></h2><div class='section-kicker'>" + escapeHtml(selected.role) + " · " + escapeHtml(selected.created_at || "—") + " · 相关 run " + selected.run_count + " 个 · bad case " + selected.bad_case_count + " 条</div></div><button class='btn ghost small' data-action='close-version-detail'>收起</button></div><div class='card-pad'><pre class='report-code' style='max-height:260px;overflow:auto;white-space:pre-wrap'>" + escapeHtml(selected.prompt_text) + "</pre></div></section>";
+        const bc = p.badCases;
+        if (!bc) {
+          return head + "<section class='section-card' style='margin-top:16px'><div class='card-pad'><p class='muted'>正在加载该版本相关的 bad case…</p></div></section>";
+        }
+        if (!bc.runs.length) {
+          return head + "<section class='section-card' style='margin-top:16px'><div class='card-pad'><p class='muted'>该版本尚未关联任何失败案例（无 run 命中或全部通过）。</p></div></section>";
+        }
+        const runBlocks = bc.runs.map((run) => {
+          const rows = run.bad_cases.map((item) => {
+            const codes = (item.reason_codes || []).join("、") || "—";
+            const missing = (item.missing_actions || []).map((action) => escapeHtml(action)).join("、") || "—";
+            const forbidden = (item.forbidden_hits || []).map((action) => escapeHtml(action)).join("、") || "—";
+            const statusLabel = item.finding_status === "false_positive" ? "已误报消解" : item.finding_status === "confirmed" ? "已确认" : item.finding_status === "pending_review" ? "待复核" : escapeHtml(item.finding_status || "—");
+            return "<tr><td><strong>" + escapeHtml(item.case_id) + "</strong><div class='muted' style='font-size:10px'>" + escapeHtml(item.checkpoint || "") + "</div></td><td>" + escapeHtml(item.side) + "</td><td>" + escapeHtml(item.priority || "—") + "</td><td><span class='verdict-badge fail'>" + escapeHtml(item.verdict || "—") + "</span></td><td>" + escapeHtml(codes) + "</td><td>" + missing + "</td><td>" + forbidden + "</td><td>" + statusLabel + "</td></tr>";
+          });
+          return "<section class='section-card table-card' style='margin-top:16px'><div class='section-head'><div><h3 style='font-size:14px'>" + escapeHtml(run.run_id) + "</h3><div class='section-kicker'>" + escapeHtml(run.created_at || "") + " · " + escapeHtml(run.status || "") + " · " + run.bad_cases.length + " 个 bad case</div></div></div><div class='table-wrap'><table><thead><tr><th>病例</th><th>版本侧</th><th>优先级</th><th>判定</th><th>原因码</th><th>缺失动作</th><th>禁止命中</th><th>Finding 状态</th></tr></thead><tbody>" + rows.join("") + "</tbody></table></div></section>";
+        });
+        return head + runBlocks.join("");
+      }
+
+      function promptsView() {
+        const p = state.prompts;
+        if (p.versions === null) loadPromptVersions();
+        const saveForm = p.showSaveForm
+          ? "<section class='section-card' style='margin-bottom:16px'><div class='section-head'><div><h2>保存新版本</h2><div class='section-kicker'>保存后即可在运行与 bad case 追溯中复用</div></div><button class='btn ghost small' data-action='close-save-version'>收起</button></div><div class='card-pad'><div class='field' style='margin-bottom:10px'><label for='pv-name'>版本名称</label><input id='pv-name' maxlength='40' placeholder='如 V3 / 起病时间强制追问' value='" + escapeHtml(p.draft.name) + "' /></div><div class='field' style='margin-bottom:10px'><label for='pv-role'>用途</label><select id='pv-role'><option value='either' " + (p.draft.role === "either" ? "selected" : "") + ">通用（可作为 Baseline 或 Candidate）</option><option value='baseline' " + (p.draft.role === "baseline" ? "selected" : "") + ">Baseline</option><option value='candidate' " + (p.draft.role === "candidate" ? "selected" : "") + ">Candidate</option></select></div><div class='field' style='margin-bottom:10px'><label for='pv-note'>备注（可选）</label><input id='pv-note' maxlength='500' placeholder='本次改动的动机 / 对应 bad case' value='" + escapeHtml(p.draft.note) + "' /></div><div class='field' style='margin-bottom:10px'><label for='pv-source'>来源 run ID（可选）</label><input id='pv-source' maxlength='64' placeholder='留空提示词全文并填 run ID 时，从该 run 自动导入对应侧提示词' value='" + escapeHtml(p.draft.sourceRunId || "") + "' /></div><div class='field'><label for='pv-text'>提示词全文</label><textarea id='pv-text' maxlength='12000' style='min-height:140px' placeholder='粘贴完整系统提示词'></textarea></div><div class='modal-foot' style='padding:0;margin-top:12px'><button class='btn ghost small' data-action='close-save-version'>取消</button><button class='btn primary small' data-action='save-prompt-version' " + (p.saving ? "disabled" : "") + ">保存版本</button></div></div></section>"
+          : "<div style='margin-bottom:16px'><button class='btn primary' data-action='open-save-version'>+ 保存新版本</button></div>";
+        let listHtml;
+        if (p.versions === null) {
+          listHtml = "<section class='section-card'><div class='card-pad'><p class='muted'>正在加载提示词版本…</p></div></section>";
+        } else if (p.versions.length === 0) {
+          listHtml = "<section class='section-card'><div class='card-pad'><p class='muted'>还没有保存任何提示词版本。保存后可在此查看全文、相关 run 与 bad case 追溯。</p></div></section>";
+        } else {
+          const rows = p.versions.map((version) => {
+            const active = version.sha256 === p.selectedSha ? " style='background:var(--surface-2, rgba(255,255,255,0.04))'" : "";
+            return "<tr" + active + "><td><strong>" + escapeHtml(version.name) + "</strong>" + (version.note ? "<div class='muted' style='font-size:10px'>" + escapeHtml(version.note) + "</div>" : "") + "</td><td>" + escapeHtml(version.role) + "</td><td><span class='mono' style='font-size:11px'>" + escapeHtml(shortHash(version.sha256)) + "</span></td><td>" + escapeHtml(version.created_at || "—") + "</td><td>" + version.run_count + "</td><td>" + (version.bad_case_count > 0 ? "<span class='verdict-badge fail'>" + version.bad_case_count + "</span>" : "0") + "</td><td><button class='btn small' data-action='load-version-badcases' data-sha='" + escapeHtml(version.sha256) + "'>查看 bad case</button></td></tr>";
+          });
+          listHtml = "<section class='section-card table-card'><div class='section-head'><div><h2>提示词版本库</h2><div class='section-kicker'>已保存版本、关联 run 与失败案例</div></div></div><div class='table-wrap'><table><thead><tr><th>名称</th><th>用途</th><th>SHA</th><th>保存时间</th><th>相关 run</th><th>bad case</th><th></th></tr></thead><tbody>" + rows.join("") + "</tbody></table></div></section>";
+        }
+        return "<div class='page'>"
+          + pageHeader("提示词版本管理", "版本库与 bad case 追溯", "每个版本绑定提示词全文与 SHA；按版本可追溯其参与过的真实 run 与失败案例（bad case），与提示词版本管理模板配套使用。" + hint("版本保存在本机 SQLite；SHA 与运行报告中的 prompt hash 一致，可精确对账。"), "")
+          + (p.error ? "<section class='section-card'><div class='card-pad'><p style='color:var(--red)'>加载失败：" + escapeHtml(p.error) + "</p></div></section>" : "")
+          + saveForm
+          + listHtml
+          + promptVersionDetailHtml()
+          + "</div>";
+      }
+
       function render() {
-        const view = ({ overview: overviewView, rules: rulesView, evaluation: evaluationView, case: caseView, gate: gateView }[state.route] || overviewView)();
+        const view = ({ overview: overviewView, rules: rulesView, evaluation: evaluationView, case: caseView, gate: gateView, prompts: promptsView }[state.route] || overviewView)();
         document.getElementById("app").innerHTML = view;
         document.getElementById("crumb-title").textContent = routeNames[state.route];
         document.querySelectorAll(".nav-button").forEach((button) => button.classList.toggle("active", button.dataset.route === state.route));
@@ -1779,6 +1909,21 @@
           if (!state.testset.selectedCaseIds.length) { showToast("请先选择至少 1 个病例"); return; }
           state.modal = "run";
           renderModal();
+        } else if (name === "open-save-version") {
+          state.prompts.showSaveForm = true;
+          render();
+        } else if (name === "close-save-version") {
+          state.prompts.showSaveForm = false;
+          render();
+        } else if (name === "save-prompt-version") {
+          await savePromptVersion();
+        } else if (name === "load-version-badcases") {
+          const sha = action.dataset.sha;
+          if (sha) loadPromptBadCases(sha);
+        } else if (name === "close-version-detail") {
+          state.prompts.selectedSha = "";
+          state.prompts.badCases = null;
+          render();
         } else if (name === "open-review-modal") {
           state.modal = "review";
           renderModal();

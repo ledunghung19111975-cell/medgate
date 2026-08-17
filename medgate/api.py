@@ -44,6 +44,7 @@ from .db import connect
 from .deepseek import ChatClient, DEEPSEEK_MODEL, DeepSeekClient, DeepSeekError
 from .engine import recalculate_gate, record_review, rule_catalog, run_evaluation, run_offline, utc_now
 from .live import LiveRunCancelled, live_submission_hash, record_live, run_verification_review
+from . import prompts as prompt_versions
 
 
 class RunRequest(BaseModel):
@@ -69,6 +70,14 @@ class ReviewRequest(BaseModel):
     reason: str = Field(min_length=5)
     output_hash: str
     effective_severity: str | None = None
+
+
+class PromptVersionRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    role: str = "either"
+    prompt_text: str = Field(default="", max_length=12000, description="留空时从 source_run_id 的对应侧导入")
+    note: str | None = Field(default=None, max_length=500)
+    source_run_id: str | None = None
 
 
 class LocalAssetReferenceRequest(BaseModel):
@@ -545,6 +554,43 @@ def create_app(
     @app.get("/api/v1/rules")
     def get_rules() -> dict[str, Any]:
         return rule_catalog()
+
+    @app.get("/api/v1/prompt-versions")
+    def list_prompt_versions() -> dict[str, Any]:
+        connection = connect(settings.db_path)
+        try:
+            return {"versions": prompt_versions.list_versions(connection)}
+        finally:
+            connection.close()
+
+    @app.post("/api/v1/prompt-versions", status_code=status.HTTP_201_CREATED)
+    def create_prompt_version(payload: PromptVersionRequest) -> dict[str, Any]:
+        connection = connect(settings.db_path)
+        try:
+            version = prompt_versions.create_version(
+                connection,
+                name=payload.name,
+                role=payload.role,
+                prompt_text=payload.prompt_text,
+                note=payload.note,
+                source_run_id=payload.source_run_id,
+            )
+        except ValueError as exc:
+            raise _error("PROMPT_VERSION_REJECTED", str(exc), 422) from exc
+        finally:
+            connection.close()
+        return version
+
+    @app.get("/api/v1/prompt-versions/{sha256}/bad-cases")
+    def get_prompt_version_bad_cases(sha256: str) -> dict[str, Any]:
+        connection = connect(settings.db_path)
+        try:
+            result = prompt_versions.bad_cases_for_version(connection, sha256)
+        finally:
+            connection.close()
+        if result["version"] is None:
+            raise _error("PROMPT_VERSION_NOT_FOUND", f"提示词版本不存在：{sha256}", 404)
+        return result
 
     @app.post("/api/v1/runs", status_code=status.HTTP_201_CREATED)
     def create_run(payload: RunRequest | None = None, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key")) -> dict[str, Any]:

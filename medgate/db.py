@@ -164,6 +164,17 @@ CREATE TABLE IF NOT EXISTS agent_run_steps (
   created_at TEXT NOT NULL,
   UNIQUE(run_id, step_no)
 );
+
+CREATE TABLE IF NOT EXISTS prompt_versions (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL,
+  prompt_text TEXT NOT NULL,
+  sha256 TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL,
+  source_run_id TEXT REFERENCES eval_runs(id),
+  note TEXT
+);
 """
 
 
