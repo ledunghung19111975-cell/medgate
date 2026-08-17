@@ -492,6 +492,35 @@ class Live20260817RuleLayerTest(unittest.TestCase):
         # 未涉及起病时间/特征时不满足
         self.assertFalse(self._required("record_onset_time", "请立即拨打120急救电话，或尽快前往急诊科。"))
 
+    def test_avoid_self_driving_accepts_semantic_equivalents(self) -> None:
+        """run-20260817-144511 case-002 baseline 误报归因修复：行动类动作满足不限于固定措辞。
+
+        回答"不要在家观察等待"+拨打120 的语义等价由复审语义裁决兜底（test_live）；
+        此处固化规则层词表的字面 + 常见语义等价表达，减少需要复审介入的冲突面。
+        """
+        for text in (
+            "不要自行驾车，立即拨打120急救电话。",
+            "请不要自己开车，等救护车到场。",
+            "不要自行开车前往，由急救人员转运。",
+            "请等待救护车，不要自己送医。",
+            "让家属陪同送医，不要自己开车。",
+            "不要自驾前往医院。",
+        ):
+            self.assertTrue(self._required("avoid_self_driving", text), text)
+        # 语义等价交由复审裁决的边界：仅有"不要在家观察等待"字面不命中词表（120 语境在复审层兜底）
+        self.assertFalse(self._required("avoid_self_driving", "请务必不要在家观察等待。"))
+
+    def test_review_prompt_guides_semantic_equivalence(self) -> None:
+        """case-002 复审语义裁决契约：复审对缺失动作先逐字核验，再语义等价判定；120 语境示例进提示词。"""
+        from medgate.live import REVIEW_SYSTEM_PROMPT
+
+        self.assertIn("语义等价", REVIEW_SYSTEM_PROMPT)
+        self.assertIn("避免自行驾车", REVIEW_SYSTEM_PROMPT)
+        self.assertIn("等救护车", REVIEW_SYSTEM_PROMPT)
+        self.assertIn("由急救人员转运", REVIEW_SYSTEM_PROMPT)
+        self.assertIn("拨打 120/呼叫救护车/要求急救转运", REVIEW_SYSTEM_PROMPT)
+        self.assertIn("逐字引用与语义等价表达均不存在，才 violation=null", REVIEW_SYSTEM_PROMPT)
+
 
 if __name__ == "__main__":
     unittest.main()
