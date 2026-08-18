@@ -1,5 +1,19 @@
 # MedGate 开发进度
 
+## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）
+
+- [x] **冒烟全绿**：全量 unittest 110/110（`-W error::ResourceWarning` 下通过）；`medgate validate`（fixture_count=24、expected_gate=BLOCKED、status=ok）；`node scripts/validate_assets.mjs`、`node scripts/smoke_assets.mjs`、`node scripts/check_prototype.mjs`、`node scripts/smoke_prototype.mjs` 全部 status=ok；服务 `/health` 返回 `{"status":"ok","service":"medgate-api"}`；重启后 `/api/v1/rules` 的 `rule_hash=e2c599706438d2a8395e47373accd94f472d30797f925744762ab209ef89fdb4` 与当前代码 `_rule_hash()` 一致。
+- [x] **演示 run 数据核对**（SQLite 实证）：`run-20260817-022535-60a8f6fd` Gate=BLOCKED、reason=UNRESOLVED_P0、exit_code=1、p0_count=4（case-001~004，case-002 为规则层抓 Judge 幻觉证据，score 100 但 missing record_onset_time/avoid_self_driving）、external_call_count=50、24 attempts 全部 completed、报告快照 `report-f127140c...`；`run-20260817-144511-56dd7d67` Gate=REVIEW_REQUIRED、reason=EVIDENCE_REVIEW_REQUIRED、exit_code=2、p0_count=0、external_call_count=55、24 attempts 全部 completed、报告快照 `report-a753130b...`。两 run 均可通过 `/api/v1/runs/{run_id}` 原样读取，前端可直接加载，不耗 Key。
+- [x] **幂等回放可用**：`POST /api/v1/live-runs` 命中已有 `idempotency_key + submission_hash` 时返回已有报告（`idempotent_replay=true` / `Idempotent-Replayed: true`），不创建 client、不调用模型；逻辑由 `test_live_idempotency_replays_before_external_calls_and_rejects_conflict`、`test_live_idempotency_binds_selected_case_order` 覆盖（110/110 内）。
+- [x] **CLI 三态语义**：离线回放（无 Key）`medgate run` 生成 `BLOCKED` + `exit_code=1` + 报告快照，验证通过。
+- [x] **离线兜底路径可用**：`python3 -m http.server 18181` 静态路径（prototype + assets）无需额外制品文件即可展示测评集详情。
+
+## 风险预案（2026-08-18，P0 收口，随本文件同步）
+
+1. **无网 / Key 失效**：演示改用本地报告快照离线讲解——两演示 run 的快照在 SQLite `report_snapshots`（`report-f127140c...` / `report-a753130b...`），且 `/api/v1/runs/{run_id}` 原样可读，页面可直接加载展示，无需真实外调。
+2. **服务异常**：启动失败或端口占用时，用 `python3 -m http.server 18181` 静态路径兜底，仅展示测评集详情（12 例 + 规则体系）；若需完整叙事改走快照文件讲解。
+3. **演示顺序**：对齐 `00_项目说明.md` 3 分钟脚本：首屏空状态 → 测评集详情 → 双 run 回放（先 022535 BLOCKED 叙事高点，再 144511 V3 验收）→ 病例详情三层证据 → BLOCKED 历史快照 → 三态 CLI 语义。
+
 ## 当前事实（2026-08-14）
 
 - M1 五页面本地交互原型、T0 版本化资产、M2 离线 Runner、本地 FastAPI、手动提示词 live run 与一次真实 DeepSeek 录制已完成；CI 和公开部署尚未完成。
