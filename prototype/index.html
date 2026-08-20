@@ -580,6 +580,9 @@
           <button class="nav-button" data-route="prompts">
             <span class="nav-icon">◈</span><span class="nav-copy"><span class="nav-title">提示词版本</span><span class="nav-caption">版本管理与 bad case</span></span>
           </button>
+          <button class="nav-button" data-route="multidim">
+            <span class="nav-icon">⬢</span><span class="nav-copy"><span class="nav-title">多维测试集</span><span class="nav-caption">FAQ/复杂/多轮/边界 150 例</span></span>
+          </button>
         </nav>
         <div class="sidebar-spacer"></div>
         <button class="sidebar-settings" data-action="open-settings" type="button">
@@ -612,6 +615,11 @@
       const LIVE_TEST_SET = "pretriage-safety-v1";
       const LIVE_MODEL = "deepseek-v4-flash";
       const API_KEY_HEADER = "X-DeepSeek-API-Key";
+      const MULTIDIM_TESTSETS = [
+        { key: "multidim-v1", title: "多维·FAQ与边界", path: "/assets/testsets/multidim-v1.json", manifest: "/assets/manifests/multidim-v1.json" },
+        { key: "complex-v1", title: "多维·复杂疾病", path: "/assets/testsets/complex-v1.json", manifest: "/assets/manifests/complex-v1.json" },
+        { key: "multi-turn-v1", title: "多维·多轮对话", path: "/assets/testsets/multi-turn-v1.json", manifest: "/assets/manifests/multi-turn-v1.json" }
+      ];
       const localRuntime = window.location.protocol === "http:"
         && ["127.0.0.1", "localhost", "::1", "[::1]"].includes(window.location.hostname)
         && ["", "8000"].includes(window.location.port || "");
@@ -707,7 +715,8 @@
           saving: false,
           showSaveForm: false,
           draft: { name: "", role: "either", note: "", sourceRunId: "" }
-        }
+        },
+        multidim: { loading: true, error: null, entries: {} }
       };
 
       let testsetEntries = [];
@@ -870,8 +879,25 @@
         manifestInfo = manifestValue && typeof manifestValue === "object" && !Array.isArray(manifestValue) ? manifestValue : null;
       }
 
+      async function loadMultidimAssets() {
+        const results = await Promise.allSettled(MULTIDIM_TESTSETS.map((item) => fetchAsset(item.path)));
+        const entries = {};
+        results.forEach((result, index) => {
+          const key = MULTIDIM_TESTSETS[index].key;
+          if (result.status === "fulfilled" && Array.isArray(result.value)) {
+            entries[key] = { cases: result.value, meta: MULTIDIM_TESTSETS[index] };
+          } else {
+            entries[key] = { cases: [], meta: MULTIDIM_TESTSETS[index], error: result.status === "rejected" ? String(result.reason) : "格式无效" };
+          }
+        });
+        state.multidim.entries = entries;
+        state.multidim.loading = false;
+        state.multidim.error = Object.values(entries).some((e) => e.error) ? "部分多维测试集加载失败" : null;
+        render();
+      }
+
       const testsetTitle = "预问诊安全集 v1";
-      const routeNames = { overview: "总览", rules: "测评集详情", evaluation: "评测详情", case: "病例详情", gate: "发布门禁", prompts: "提示词版本" };
+      const routeNames = { overview: "总览", rules: "测评集详情", evaluation: "评测详情", case: "病例详情", gate: "发布门禁", prompts: "提示词版本", multidim: "多维测试集" };
       const currentRun = () => state.activeRun;
       const runModeLabel = () => "真实调用";
       const hasRun = () => Boolean(state.activeRun && cases.length);
@@ -1533,8 +1559,45 @@
           + "</div>";
       }
 
+      function multidimView() {
+        if (state.multidim.loading && !Object.keys(state.multidim.entries).length) {
+          loadMultidimAssets();
+          return "<div class='page'>" + pageHeader("多维测试集 · 150 例", "多维测试集", "FAQ/复杂/多轮/边界四层,共 150 例(多维 82 + 复杂 38 + 多轮 30),与预问诊安全集 12 例独立。只读展示,无需运行。", "<button class='btn' data-route='overview'>← 返回总览</button>") + "<div class='section-card'><div class='card-pad'><p class='muted'>正在加载多维测试集…</p></div></div></div>";
+        }
+        const mEntries = state.multidim.entries;
+        const total = MULTIDIM_TESTSETS.reduce((sum, item) => sum + ((mEntries[item.key] && mEntries[item.key].cases.length) || 0), 0);
+        const scenarioLabel = { faq: "FAQ", complex: "复杂", multi_turn: "多轮", boundary: "边界" };
+        const scenarioColor = { faq: "var(--blue)", complex: "var(--amber)", multi_turn: "var(--teal)", boundary: "var(--red)" };
+        let mHtml = "<div class='page'>" + pageHeader("多维测试集 · " + total + " 例", "多维测试集", "FAQ 60 + 边界 22 + 复杂 38 + 多轮 30,四层只读展示。边界层零容忍(P0),其余三层只出分不判。合成样例,未经执业医师复核。", "<button class='btn' data-route='overview'>← 返回总览</button><button class='btn' data-route='rules'>查看预问诊安全集 →</button>") + "<div class='summary-strip'><span class='summary-pill'>总计 <strong>" + total + " 例</strong></span>" + MULTIDIM_TESTSETS.map((item) => {
+          const e = mEntries[item.key];
+          const count = e ? e.cases.length : 0;
+          return "<span class='summary-pill'>" + escapeHtml(item.title) + " <strong>" + count + " 例</strong></span>";
+        }).join("") + "</div>";
+        MULTIDIM_TESTSETS.forEach((item) => {
+          const e = mEntries[item.key];
+          const cases = e ? e.cases : [];
+          const scenarioCounts = {};
+          cases.forEach((c) => { scenarioCounts[c.scenario] = (scenarioCounts[c.scenario] || 0) + 1; });
+          const scenarioChips = Object.entries(scenarioCounts).map(([k, v]) => "<span class='summary-pill' style='border-color:" + (scenarioColor[k] || "var(--line)") + "'><span style='width:7px;height:7px;border-radius:50%;background:" + (scenarioColor[k] || "var(--muted)") + ";display:inline-block'></span>" + escapeHtml(scenarioLabel[k] || k) + " " + v + "</span>").join("");
+          mHtml += "<section class='section-card table-card' style='margin-top:16px'><div class='section-head'><div><h2>" + escapeHtml(item.title) + "</h2><div class='section-kicker'>" + escapeHtml(item.key) + " · " + cases.length + " 例" + (e && e.error ? " · 加载异常" : "") + "</div></div><span class='mono' style='font-size:10px;color:var(--muted)'>" + escapeHtml(item.path) + "</span></div><div class='card-pad' style='padding-top:0'><div class='summary-strip' style='margin:0 0 12px 0'>" + scenarioChips + "</div>";
+          if (!cases.length) {
+            mHtml += "<p class='muted'>" + escapeHtml(e && e.error || "暂无数据") + "</p>";
+          } else {
+            mHtml += "<div class='table-wrap'><table><thead><tr><th>CASE ID</th><th>标题</th><th>场景</th><th>优先级</th><th>用户问题</th></tr></thead><tbody>" + cases.slice(0, 30).map((c) => {
+              const firstTurn = (c.input && c.input.turns && c.input.turns[0]) ? String(c.input.turns[0]).slice(0, 60) : "—";
+              const scenarioName = scenarioLabel[c.scenario] || c.scenario;
+              const priorityChip = c.priority === "P0" ? "blocked" : c.priority === "P1" ? "review" : "neutral";
+              return "<tr><td><span class='case-id'>" + escapeHtml(c.case_id) + "</span></td><td><span class='case-title'>" + escapeHtml(c.title) + "</span></td><td>" + statusChip(scenarioName, c.scenario === "boundary" ? "blocked" : c.scenario === "faq" ? "passed" : "neutral") + "</td><td>" + statusChip(c.priority, priorityChip) + "</td><td><span class='muted' style='font-size:11px'>" + escapeHtml(firstTurn) + (String((c.input && c.input.turns && c.input.turns[0]) || "").length > 60 ? "…" : "") + "</span></td></tr>";
+            }).join("") + "</tbody></table></div>" + (cases.length > 30 ? "<div class='table-foot'><span>仅展示前 30 例,共 " + cases.length + " 例</span></div>" : "");
+          }
+          mHtml += "</div></section>";
+        });
+        mHtml += "<div class='table-foot' style='margin-top:16px;display:flex;justify-content:space-between'><span>合成样例,未经执业医师复核(synthetic_demo_unreviewed)</span><span class='mono'>150 例=多维 82+复杂 38+多轮 30,预问诊安全集 12 例独立</span></div></div>";
+        return mHtml;
+      }
+
       function render() {
-        const view = ({ overview: overviewView, rules: rulesView, evaluation: evaluationView, case: caseView, gate: gateView, prompts: promptsView }[state.route] || overviewView)();
+        const view = ({ overview: overviewView, rules: rulesView, evaluation: evaluationView, case: caseView, gate: gateView, prompts: promptsView, multidim: multidimView }[state.route] || overviewView)();
         document.getElementById("app").innerHTML = view;
         document.getElementById("crumb-title").textContent = routeNames[state.route];
         document.querySelectorAll(".nav-button").forEach((button) => button.classList.toggle("active", button.dataset.route === state.route));
