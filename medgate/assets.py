@@ -95,10 +95,19 @@ def _read_agents(path: Path) -> list[dict[str, str]]:
     return agents
 
 
-def load_bundle(root: Path | None = None) -> AssetBundle:
+def _manifest_path(assets_root: Path, testset_key: str | None) -> Path:
+    """测试集 manifest 定位约定：默认（None / pretriage-safety-v1）用根 manifest.json
+    保持冻结；其余 testset 用独立 manifest，两套各自校验（14_ 计划四.9）。"""
+    key = (testset_key or "pretriage-safety-v1").strip()
+    if key == "pretriage-safety-v1":
+        return assets_root / "manifest.json"
+    return assets_root / "manifests" / f"{key}.json"
+
+
+def load_bundle(root: Path | None = None, *, testset_key: str | None = None) -> AssetBundle:
     project_root = (root or Path(__file__).resolve().parents[1]).resolve()
     assets_root = project_root / "assets"
-    manifest_path = assets_root / "manifest.json"
+    manifest_path = _manifest_path(assets_root, testset_key)
     manifest = _read_json(manifest_path)
     if manifest.get("manifest_version") != "1.0.0":
         raise AssetError("不支持的 manifest 版本")
@@ -132,6 +141,18 @@ def _validate_shape(
 ) -> None:
     if len(agents) != 2 or {agent.get("role") for agent in agents} != {"baseline", "candidate"}:
         raise AssetError("Agent 资产必须包含 baseline 与 candidate 两个版本")
+    if "scenarios" in manifest:
+        _validate_multidim_shape(manifest, agents, cases, fixtures)
+        return
+    _validate_pretriage_shape(manifest, agents, cases, fixtures)
+
+
+def _validate_pretriage_shape(
+    manifest: dict[str, Any],
+    agents: list[dict[str, str]],
+    cases: list[dict[str, Any]],
+    fixtures: list[dict[str, Any]],
+) -> None:
     expected_cases = int(manifest.get("expected_case_count", -1))
     expected_fixtures = int(manifest.get("expected_fixture_count", -1))
     if len(cases) != expected_cases:
@@ -179,3 +200,49 @@ def _validate_shape(
     missing = [case_id for case_id, keys in seen.items() if keys != agent_keys]
     if missing:
         raise AssetError(f"病例缺少双版本 fixture：{missing}")
+
+
+def _validate_multidim_shape(
+    manifest: dict[str, Any],
+    agents: list[dict[str, str]],
+    cases: list[dict[str, Any]],
+    fixtures: list[dict[str, Any]],
+) -> None:
+    """多维度测试集（multidim）校验：独立 manifest，允许部分 case 无 fixture（live-only）。
+
+    场景类型（scenario）与 pretriage 的 dimension 正交；只有 boundary 层进 Gate，
+    FAQ/复杂疾病/多轮三层只出分不判（14_ 计划四.10、D-12）。
+    """
+    expected_cases = int(manifest.get("expected_case_count", -1))
+    if len(cases) != expected_cases:
+        raise AssetError(f"病例数量不符：expected={expected_cases} actual={len(cases)}")
+    allowed_scenarios = set(manifest["scenarios"])
+    case_ids = [case.get("case_id") for case in cases]
+    if len(set(case_ids)) != len(case_ids) or any(not case_id for case_id in case_ids):
+        raise AssetError("case_id 必须唯一且非空")
+    for case in cases:
+        scenario = case.get("scenario")
+        if scenario not in allowed_scenarios:
+            raise AssetError(f"case 使用了未知 scenario：{case.get('case_id')} -> {scenario}")
+        if scenario == "faq" and not str(case.get("faq_reference_answer", "")).strip():
+            raise AssetError(f"FAQ case 缺少标答 faq_reference_answer：{case.get('case_id')}")
+        if scenario == "boundary" and not str(case.get("boundary_type", "")).strip():
+            raise AssetError(f"boundary case 缺少边界类型 boundary_type：{case.get('case_id')}")
+    agent_keys = {agent["key"] for agent in agents}
+    fixture_keys = {fixture.get("fixture_id") for fixture in fixtures}
+    if len(fixture_keys) != len(fixtures):
+        raise AssetError("fixture_id 必须唯一")
+    for fixture in fixtures:
+        case_id = fixture.get("case_id")
+        agent_key = fixture.get("agent_key")
+        if case_id not in case_ids:
+            raise AssetError(f"fixture 引用未知 case：{fixture.get('fixture_id')}")
+        if agent_key not in agent_keys:
+            raise AssetError(f"fixture 引用未知 agent：{fixture.get('fixture_id')}")
+        result = fixture.get("judge_result") or {}
+        if result.get("verdict") not in {"pass", "fail"}:
+            raise AssetError(f"judge verdict 非法：{fixture.get('fixture_id')}")
+        if not isinstance(result.get("score"), (int, float)):
+            raise AssetError(f"fixture 缺少 score：{fixture.get('fixture_id')}")
+        if result.get("verdict") == "pass" and result.get("finding_id") is not None:
+            raise AssetError(f"通过 fixture 不得挂载 Finding：{fixture.get('fixture_id')}")

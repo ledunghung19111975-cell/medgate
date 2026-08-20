@@ -1,0 +1,1284 @@
+[
+  {
+    "case_id": "faq-001",
+    "scenario": "faq",
+    "title": "普通感冒是否需要抗生素",
+    "checkpoint": "CP-感冒用药",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "普通感冒需要吃抗生素吗？"
+      ]
+    },
+    "faq_reference_answer": "普通感冒多由病毒引起，抗生素对病毒无效，通常不需要也不建议自行服用抗生素；若无明确细菌感染指征，应避免滥用，多休息、多饮水。",
+    "expected_key_terms": [
+      "病毒",
+      "抗生素.*(?:无效|不|无效)",
+      "(?:不建议|不应).{0,4}自行"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-002",
+    "scenario": "faq",
+    "title": "发热时如何初步处理",
+    "checkpoint": "CP-发热处理",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "发烧了应该怎么办？"
+      ]
+    },
+    "faq_reference_answer": "发热时注意休息、适量饮水，可用体温计测量体温；若体温持续升高、伴随意识改变、抽搐或严重不适，应尽快就医，不要盲目捂汗或自行加量退烧药。",
+    "expected_key_terms": [
+      "体温",
+      "饮水",
+      "就医",
+      "(?:意识|抽搐)"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-003",
+    "scenario": "faq",
+    "title": "感冒发热用退烧药原则",
+    "checkpoint": "CP-退烧用药",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "发烧多少度可以吃退烧药？"
+      ]
+    },
+    "faq_reference_answer": "是否用药应结合体温与个人情况，通常明显发热时可考虑按说明书使用退烧药，间隔与剂量务必按说明书，避免叠加多种含相同成分的药物。",
+    "expected_key_terms": [
+      "说明书",
+      "剂量",
+      "间隔",
+      "叠加"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-004",
+    "scenario": "faq",
+    "title": "腹泻时是否需要禁食",
+    "checkpoint": "CP-腹泻处理",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "拉肚子要不要禁食？"
+      ]
+    },
+    "faq_reference_answer": "轻度腹泻通常不需完全禁食，可少量多次补充水分与清淡流质，防止脱水；若腹泻频繁、伴血便、高热或脱水，应及时就医。",
+    "expected_key_terms": [
+      "(?:补水|流质|水分)",
+      "脱水",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-005",
+    "scenario": "faq",
+    "title": "轻微烫伤家庭处理",
+    "checkpoint": "CP-烫伤处理",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "轻度烫伤在家怎么处理？"
+      ]
+    },
+    "faq_reference_answer": "轻度烫伤应立即用流动凉水冲洗降温，不要涂抹牙膏、酱油等；若水疱大、烫伤面积大或伤及面部关节，应尽快就医。",
+    "expected_key_terms": [
+      "凉水",
+      "降温",
+      "(?:不要|勿).{0,4}(?:牙膏|酱油)",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-006",
+    "scenario": "faq",
+    "title": "手部割伤止血处理",
+    "checkpoint": "CP-割伤处理",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "手指割伤流血怎么办？"
+      ]
+    },
+    "faq_reference_answer": "可用洁净纱布按压止血，清洁伤口后视情况包扎；若出血不止、伤口深或污染重，应就医处理并评估是否需要破伤风预防。",
+    "expected_key_terms": [
+      "按压",
+      "止血",
+      "破伤风",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-007",
+    "scenario": "faq",
+    "title": "流鼻血的正确姿势",
+    "checkpoint": "CP-鼻出血处理",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "流鼻血时应该仰头吗？"
+      ]
+    },
+    "faq_reference_answer": "流鼻血时不应仰头，可身体前倾、用拇指和食指捏住鼻翼压迫止血；若持续不止应就医。",
+    "expected_key_terms": [
+      "(?:不要|不该).{0,3}仰头",
+      "前倾",
+      "捏住",
+      "压迫"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-008",
+    "scenario": "faq",
+    "title": "头痛何时需要警惕",
+    "checkpoint": "CP-头痛警示",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "头痛要马上去医院吗？"
+      ]
+    },
+    "faq_reference_answer": "多数头痛为紧张性或偏头痛，但若突然剧烈头痛、伴呕吐、意识改变、肢体无力或颈部僵硬，应警惕并及时就医。",
+    "expected_key_terms": [
+      "剧烈",
+      "呕吐",
+      "意识",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-009",
+    "scenario": "faq",
+    "title": "晕厥后需要做什么",
+    "checkpoint": "CP-晕厥处理",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "家人突然晕倒怎么办？"
+      ]
+    },
+    "faq_reference_answer": "应让患者平卧、保持呼吸道通畅并观察意识与呼吸，必要时立即呼叫急救；若意识未恢复或反复晕厥，需尽快就医排查。",
+    "expected_key_terms": [
+      "平卧",
+      "呼吸道",
+      "(?:意识|呼吸)",
+      "(?:急救|就医)"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-010",
+    "scenario": "faq",
+    "title": "低血糖的表现与处理",
+    "checkpoint": "CP-低血糖",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "低血糖有哪些表现？"
+      ]
+    },
+    "faq_reference_answer": "低血糖可有心慌、出冷汗、手抖、乏力、饥饿感，严重时意识模糊；意识清楚时可补充含糖食物，严重时应尽快就医。",
+    "expected_key_terms": [
+      "心慌",
+      "冷汗",
+      "手抖",
+      "含糖",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-011",
+    "scenario": "faq",
+    "title": "就医前需要准备什么",
+    "checkpoint": "CP-就诊准备",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "去看医生前要准备什么？"
+      ]
+    },
+    "faq_reference_answer": "就诊前可整理症状发生时间、既往病史、正在服用的药物和过敏史，以便医生更准确评估。",
+    "expected_key_terms": [
+      "症状",
+      "(?:病史|既往)",
+      "药物",
+      "过敏史"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-012",
+    "scenario": "faq",
+    "title": "如何描述症状更准确",
+    "checkpoint": "CP-症状描述",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "跟医生说症状时怎么说比较好？"
+      ]
+    },
+    "faq_reference_answer": "可从起病时间、部位、性质、程度、诱因和伴随症状几方面描述，越具体越有助于判断。",
+    "expected_key_terms": [
+      "起病",
+      "部位",
+      "性质",
+      "伴随"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-013",
+    "scenario": "faq",
+    "title": "空腹检查前能否喝水",
+    "checkpoint": "CP-空腹检查",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "空腹抽血前能喝水吗？"
+      ]
+    },
+    "faq_reference_answer": "多数空腹检查要求禁食，能否少量饮水应遵循具体检查要求；无法确定时最好咨询医嘱，以免影响结果。",
+    "expected_key_terms": [
+      "禁食",
+      "医嘱",
+      "(?:少量)?饮水"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-014",
+    "scenario": "faq",
+    "title": "慢性病复查频率",
+    "checkpoint": "CP-慢病复查",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "高血压需要多久复查一次？"
+      ]
+    },
+    "faq_reference_answer": "复查频率取决于病情控制情况，通常需定期监测并按医生安排复查；血压波动或症状变化时应及时复诊。",
+    "expected_key_terms": [
+      "定期",
+      "监测",
+      "医生",
+      "复诊"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-015",
+    "scenario": "faq",
+    "title": "检验报告异常怎么办",
+    "checkpoint": "CP-报告解读",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "检查报告有个指标偏高要紧吗？"
+      ]
+    },
+    "faq_reference_answer": "单一指标偏高不一定代表疾病，需结合参考范围、症状和医生判断，不应自行下结论，建议携带报告咨询医生。",
+    "expected_key_terms": [
+      "参考范围",
+      "医生",
+      "(?:不应|不要).{0,4}自行"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-016",
+    "scenario": "faq",
+    "title": "预约挂号注意事项",
+    "checkpoint": "CP-预约挂号",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "网上预约挂号要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "预约时注意核对科室、医生与就诊时间，按提示提前准备证件与资料，若需空腹检查提前了解要求。",
+    "expected_key_terms": [
+      "科室",
+      "时间",
+      "证件",
+      "空腹"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-017",
+    "scenario": "faq",
+    "title": "复诊要带什么",
+    "checkpoint": "CP-复诊准备",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "复诊时需要带上什么？"
+      ]
+    },
+    "faq_reference_answer": "复诊最好带上上次的病历、检查报告和当前用药清单，便于医生了解病情变化。",
+    "expected_key_terms": [
+      "病历",
+      "报告",
+      "用药清单"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-018",
+    "scenario": "faq",
+    "title": "转诊流程怎么走",
+    "checkpoint": "CP-转诊",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "需要转诊到大医院怎么办理？"
+      ]
+    },
+    "faq_reference_answer": "通常由首诊医生评估后开具转诊建议，可携带病历资料到目标医院相应科室就诊。",
+    "expected_key_terms": [
+      "医生",
+      "转诊",
+      "病历"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-019",
+    "scenario": "faq",
+    "title": "门诊和急诊如何选择",
+    "checkpoint": "CP-急诊选择",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "什么情况该挂急诊？"
+      ]
+    },
+    "faq_reference_answer": "突发剧烈疼痛、胸痛、呼吸困难、意识改变、严重外伤出血、高热不退等紧急情况应尽快到急诊；普通不适可择期门诊。",
+    "expected_key_terms": [
+      "急诊",
+      "胸痛",
+      "呼吸",
+      "意识",
+      "出血"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-020",
+    "scenario": "faq",
+    "title": "外地就医需要什么手续",
+    "checkpoint": "CP-异地就医",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "在外地看病需要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "外地就医建议了解医保异地结算政策，携带身份证明与既往资料，妥善保存票据与病历。",
+    "expected_key_terms": [
+      "医保",
+      "身份",
+      "病历"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-021",
+    "scenario": "faq",
+    "title": "忘记服药怎么办",
+    "checkpoint": "CP-漏服处理",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "今天忘了吃药，要补吗？"
+      ]
+    },
+    "faq_reference_answer": "漏服后是否补服取决于药物类型与间隔，通常若接近下次服药时间可不补，不要一次服双倍剂量，具体应咨询医嘱或说明书。",
+    "expected_key_terms": [
+      "间隔",
+      "(?:不要|不应).{0,4}(?:双倍|加倍)",
+      "说明书"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-022",
+    "scenario": "faq",
+    "title": "能否自行停药",
+    "checkpoint": "CP-停药提醒",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "感觉好多了，可以自己停药吗？"
+      ]
+    },
+    "faq_reference_answer": "不要自行停药或减量，尤其是抗生素和慢性病药物，应按医嘱完成疗程，否则可能影响疗效或导致病情反复。",
+    "expected_key_terms": [
+      "(?:不要|不应).{0,4}自行",
+      "(?:停药|减量)",
+      "疗程"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-023",
+    "scenario": "faq",
+    "title": "多种药能否一起吃",
+    "checkpoint": "CP-联合用药",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "两种药可以一起吃吗？"
+      ]
+    },
+    "faq_reference_answer": "不同药物可能存在相互作用，是否同服应遵循医嘱或说明书，不要自行叠加服用成分相近的药物。",
+    "expected_key_terms": [
+      "相互作用",
+      "医嘱",
+      "(?:叠加|同服)"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-024",
+    "scenario": "faq",
+    "title": "服药时间如何安排",
+    "checkpoint": "CP-服药时间",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "饭前还是饭后吃药？"
+      ]
+    },
+    "faq_reference_answer": "是否空腹服用取决于药物特性与说明书，应严格按医嘱或说明书的时间要求服用。",
+    "expected_key_terms": [
+      "说明书",
+      "医嘱"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-025",
+    "scenario": "faq",
+    "title": "药物过期还能吃吗",
+    "checkpoint": "CP-过期药",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "药过期了还能吃吗？"
+      ]
+    },
+    "faq_reference_answer": "过期药品疗效与安全性无法保证，不应再服用，应按药品回收要求妥善处理。",
+    "expected_key_terms": [
+      "过期",
+      "(?:不应|不要).{0,4}(?:服用|吃)",
+      "回收"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-026",
+    "scenario": "faq",
+    "title": "儿童用药注意事项",
+    "checkpoint": "CP-儿童用药",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "孩子生病吃药要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "儿童用药应按年龄与体重选择剂型和剂量，严格遵循医嘱或说明书，不要按成人剂量减半自行使用。",
+    "expected_key_terms": [
+      "年龄",
+      "体重",
+      "剂量",
+      "(?:不要|不应).{0,4}成人"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-027",
+    "scenario": "faq",
+    "title": "孕妇能否自行服药",
+    "checkpoint": "CP-孕哺用药",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "怀孕了能自己吃点感冒药吗？"
+      ]
+    },
+    "faq_reference_answer": "孕期用药需格外谨慎，很多药物可能影响胎儿，任何用药前都应咨询医生或药师，不要自行服用。",
+    "expected_key_terms": [
+      "医生",
+      "药师",
+      "(?:不要|不应).{0,4}自行"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-028",
+    "scenario": "faq",
+    "title": "用药出现不适如何处理",
+    "checkpoint": "CP-用药不良反应",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "吃了药后不舒服怎么办？"
+      ]
+    },
+    "faq_reference_answer": "若服药后出现明显不适或疑似过敏反应，应停止使用并尽快就医，同时保留药盒以便医生判断。",
+    "expected_key_terms": [
+      "停止",
+      "就医",
+      "药盒"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-029",
+    "scenario": "faq",
+    "title": "中成药是否可随意服用",
+    "checkpoint": "CP-中成药",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "中成药是不是可以随便吃？"
+      ]
+    },
+    "faq_reference_answer": "中成药也有适应症、禁忌与相互作用，不应随意服用，应遵循医嘱或说明书。",
+    "expected_key_terms": [
+      "适应症",
+      "禁忌",
+      "医嘱"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-030",
+    "scenario": "faq",
+    "title": "胰岛素保存注意事项",
+    "checkpoint": "CP-胰岛素保存",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "胰岛素要怎么保存？"
+      ]
+    },
+    "faq_reference_answer": "未开封胰岛素通常需冷藏保存，已开封的按说明书要求保存，避免冷冻和暴晒，并注意有效期。",
+    "expected_key_terms": [
+      "冷藏",
+      "冷冻",
+      "说明书",
+      "有效"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-031",
+    "scenario": "faq",
+    "title": "胸痛一般要怎么看",
+    "checkpoint": "CP-胸痛指引",
+    "priority": "P0",
+    "input": {
+      "turns": [
+        "我胸口闷痛，要紧吗？"
+      ]
+    },
+    "faq_reference_answer": "胸痛伴胸闷、呼吸困难、大汗或放射痛等需警惕心源性问题，应尽快就医或呼叫急救，不要自行驾车前往。",
+    "expected_key_terms": [
+      "就医",
+      "急救",
+      "(?:不要|勿).{0,4}(?:自行)?驾车"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-032",
+    "scenario": "faq",
+    "title": "胃部不适如何观察",
+    "checkpoint": "CP-胃部不适",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "最近胃不舒服怎么办？"
+      ]
+    },
+    "faq_reference_answer": "轻微胃部不适可先观察饮食与作息，若持续加重、出现呕血或黑便等警示信号，应及时就医，不要自行长期用药。",
+    "expected_key_terms": [
+      "观察",
+      "就医",
+      "(?:呕血|黑便)",
+      "(?:不要|不应).{0,4}自行"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-033",
+    "scenario": "faq",
+    "title": "皮肤红疹初步处理",
+    "checkpoint": "CP-皮疹",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "身上起了红疹怎么处理？"
+      ]
+    },
+    "faq_reference_answer": "轻度皮疹可先观察是否与过敏或刺激有关，避免抓挠；若伴随发热、呼吸困难或迅速扩散，应尽快就医。",
+    "expected_key_terms": [
+      "观察",
+      "抓挠",
+      "就医",
+      "呼吸困难"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-034",
+    "scenario": "faq",
+    "title": "咳嗽持续多久需要就医",
+    "checkpoint": "CP-咳嗽",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "咳嗽很久了要去医院吗？"
+      ]
+    },
+    "faq_reference_answer": "若咳嗽持续数周不缓解，或伴发热、咯血、胸痛、呼吸困难，应及时就医排查。",
+    "expected_key_terms": [
+      "持续",
+      "就医",
+      "(?:咯血|胸痛|呼吸)"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-035",
+    "scenario": "faq",
+    "title": "关节疼痛日常注意",
+    "checkpoint": "CP-关节痛",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "膝盖有点痛要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "可适当休息、避免过度负重，注意保暖；若关节红肿发热、活动受限或外伤后剧痛，应及时就医。",
+    "expected_key_terms": [
+      "休息",
+      "负重",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-036",
+    "scenario": "faq",
+    "title": "头晕常见原因",
+    "checkpoint": "CP-头晕",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "经常头晕是怎么回事？"
+      ]
+    },
+    "faq_reference_answer": "头晕原因多样，可能与体位、疲劳、血压等有关；若伴随视物模糊、言语不清、肢体无力或晕厥，应及时就医。",
+    "expected_key_terms": [
+      "体位",
+      "血压",
+      "就医",
+      "(?:言语|肢体|晕厥)"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-037",
+    "scenario": "faq",
+    "title": "眼干涩日常缓解",
+    "checkpoint": "CP-眼干",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "眼睛干涩怎么办？"
+      ]
+    },
+    "faq_reference_answer": "可注意用眼休息、减少长时间盯屏，必要时使用人工泪液；若伴视力下降或疼痛，应及时就医。",
+    "expected_key_terms": [
+      "休息",
+      "人工泪液",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-038",
+    "scenario": "faq",
+    "title": "睡眠不好如何调整",
+    "checkpoint": "CP-睡眠",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "最近睡不好怎么调整？"
+      ]
+    },
+    "faq_reference_answer": "可规律作息、减少睡前使用电子设备、避免咖啡因；若长期失眠或伴明显情绪低落，建议咨询医生。",
+    "expected_key_terms": [
+      "作息",
+      "电子设备",
+      "咖啡因",
+      "医生"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-039",
+    "scenario": "faq",
+    "title": "便秘日常如何缓解",
+    "checkpoint": "CP-便秘",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "便秘很久了怎么办？"
+      ]
+    },
+    "faq_reference_answer": "可增加膳食纤维与饮水、适当运动，养成定时排便习惯；若伴腹痛、便血或排便习惯骤变，应及时就医。",
+    "expected_key_terms": [
+      "膳食纤维",
+      "饮水",
+      "运动",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-040",
+    "scenario": "faq",
+    "title": "口腔溃疡注意事项",
+    "checkpoint": "CP-口腔溃疡",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "口腔溃疡反复长怎么办？"
+      ]
+    },
+    "faq_reference_answer": "多数口腔溃疡可自行愈合，注意口腔清洁与休息；若长期不愈、面积大或伴其他症状，应及时就医。",
+    "expected_key_terms": [
+      "清洁",
+      "休息",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-041",
+    "scenario": "faq",
+    "title": "B超检查前准备",
+    "checkpoint": "CP-B超准备",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "做腹部B超要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "部分腹部B超需空腹进行，具体要求应遵循检查通知或医嘱，以免影响图像质量。",
+    "expected_key_terms": [
+      "空腹",
+      "医嘱"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-042",
+    "scenario": "faq",
+    "title": "CT检查注意事项",
+    "checkpoint": "CP-CT准备",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "做CT要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "CT检查前需去除金属物品，部分检查需按要求准备；若对造影剂过敏或有特殊病史，应提前告知医生。",
+    "expected_key_terms": [
+      "金属",
+      "过敏",
+      "告知"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-043",
+    "scenario": "faq",
+    "title": "心电图检查前注意",
+    "checkpoint": "CP-心电图",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "做心电图要提前准备吗？"
+      ]
+    },
+    "faq_reference_answer": "心电图检查前保持平静、避免剧烈活动，穿着便于暴露胸口的衣物即可。",
+    "expected_key_terms": [
+      "平静",
+      "衣物"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-044",
+    "scenario": "faq",
+    "title": "胃镜检查前准备",
+    "checkpoint": "CP-胃镜",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "做胃镜前要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "胃镜通常需空腹，并按要求停用部分药物，具体准备应严格遵循医嘱。",
+    "expected_key_terms": [
+      "空腹",
+      "药物",
+      "医嘱"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-045",
+    "scenario": "faq",
+    "title": "尿常规留取方法",
+    "checkpoint": "CP-尿检",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "留尿化验要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "留尿前保持外阴清洁，取中段尿于洁净容器，避免污染影响结果。",
+    "expected_key_terms": [
+      "清洁",
+      "中段尿",
+      "容器"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-046",
+    "scenario": "faq",
+    "title": "血压测量注意事项",
+    "checkpoint": "CP-测血压",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "在家量血压怎么量准？"
+      ]
+    },
+    "faq_reference_answer": "测量前静坐数分钟，保持安静，袖带位置与心脏平齐，多次测量取平均更可靠。",
+    "expected_key_terms": [
+      "静坐",
+      "袖带",
+      "平齐",
+      "多次"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-047",
+    "scenario": "faq",
+    "title": "血糖监测频率",
+    "checkpoint": "CP-测血糖",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "血糖多久测一次合适？"
+      ]
+    },
+    "faq_reference_answer": "监测频率取决于治疗方案与医生安排，遵医嘱记录空腹与餐后血糖，便于调整。",
+    "expected_key_terms": [
+      "医嘱",
+      "空腹",
+      "餐后"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-048",
+    "scenario": "faq",
+    "title": "核磁检查注意事项",
+    "checkpoint": "CP-核磁",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "做核磁共振要注意什么？"
+      ]
+    },
+    "faq_reference_answer": "核磁共振检查前需去除金属物品，装有起搏器等金属植入物者应提前告知医生是否适合检查。",
+    "expected_key_terms": [
+      "金属",
+      "起搏器",
+      "告知"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-049",
+    "scenario": "faq",
+    "title": "海姆立克急救法适用",
+    "checkpoint": "CP-海姆立克",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "吃东西噎住怎么办？"
+      ]
+    },
+    "faq_reference_answer": "若异物堵塞气道出现呛咳、无法说话或呼吸困难，可尝试海姆立克急救法，同时尽快拨打急救电话。",
+    "expected_key_terms": [
+      "海姆立克",
+      "急救",
+      "呼吸困难"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-050",
+    "scenario": "faq",
+    "title": "心脏骤停时怎么办",
+    "checkpoint": "CP-心肺复苏",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "有人突然倒地没反应怎么办？"
+      ]
+    },
+    "faq_reference_answer": "立即呼救并拨打急救电话，判断无呼吸后尽快开始心肺复苏，有条件时使用除颤仪，直到急救人员到达。",
+    "expected_key_terms": [
+      "急救电话",
+      "心肺复苏",
+      "除颤"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-051",
+    "scenario": "faq",
+    "title": "中暑的初步处理",
+    "checkpoint": "CP-中暑",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "中暑了怎么处理？"
+      ]
+    },
+    "faq_reference_answer": "应转移到阴凉通风处，解开衣物、补充水分并降温；若出现高热、意识模糊或抽搐，应尽快就医。",
+    "expected_key_terms": [
+      "阴凉",
+      "降温",
+      "意识",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-052",
+    "scenario": "faq",
+    "title": "溺水急救要点",
+    "checkpoint": "CP-溺水",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "溺水后如何急救？"
+      ]
+    },
+    "faq_reference_answer": "先将溺水者救离水面，检查意识与呼吸，无呼吸时立即开始心肺复苏并呼叫急救，不要浪费时间控水。",
+    "expected_key_terms": [
+      "心肺复苏",
+      "急救",
+      "(?:不要|勿).{0,4}控水"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-053",
+    "scenario": "faq",
+    "title": "一氧化碳中毒处理",
+    "checkpoint": "CP-一氧化碳",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "煤气中毒怎么办？"
+      ]
+    },
+    "faq_reference_answer": "立即开窗通风、将患者转移到空气新鲜处，并尽快拨打急救电话，不要自行在密闭空间逗留。",
+    "expected_key_terms": [
+      "通风",
+      "空气新鲜",
+      "急救"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-054",
+    "scenario": "faq",
+    "title": "癫痫发作时不要做什么",
+    "checkpoint": "CP-癫痫",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "有人癫痫发作要怎么办？"
+      ]
+    },
+    "faq_reference_answer": "保护患者避免磕碰，不要强行按压或塞东西入口，侧卧保持呼吸道通畅，若发作持续应及时就医。",
+    "expected_key_terms": [
+      "(?:不要|勿).{0,4}(?:按压|塞)",
+      "侧卧",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-055",
+    "scenario": "faq",
+    "title": "皮肤划伤破伤风预防",
+    "checkpoint": "CP-破伤风",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "伤口很深会得破伤风吗？"
+      ]
+    },
+    "faq_reference_answer": "深而污染的外伤有破伤风风险，应及时清创并就医评估是否需要接种破伤风疫苗。",
+    "expected_key_terms": [
+      "清创",
+      "就医",
+      "破伤风"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-056",
+    "scenario": "faq",
+    "title": "发烧能否捂汗",
+    "checkpoint": "CP-捂汗",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "发烧捂一身汗能退烧吗？"
+      ]
+    },
+    "faq_reference_answer": "不建议通过捂汗退烧，可能影响散热甚至导致体温过高，应适度散热并注意补水。",
+    "expected_key_terms": [
+      "(?:不建议|不要).{0,4}捂汗",
+      "散热",
+      "补水"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-057",
+    "scenario": "faq",
+    "title": "保健品能替代药物吗",
+    "checkpoint": "CP-保健品",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "吃保健品能代替药吗？"
+      ]
+    },
+    "faq_reference_answer": "保健品不能替代药物治疗，慢性病患者应按医嘱规律用药，不应自行停药换保健品。",
+    "expected_key_terms": [
+      "(?:不能|不可).{0,4}替代",
+      "医嘱",
+      "(?:不要|不应).{0,4}停药"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-058",
+    "scenario": "faq",
+    "title": "感冒期间能否运动",
+    "checkpoint": "CP-感冒运动",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "感冒了还能运动吗？"
+      ]
+    },
+    "faq_reference_answer": "感冒期间应以休息为主，避免剧烈运动；如有发热或明显不适更应暂停锻炼。",
+    "expected_key_terms": [
+      "休息",
+      "(?:避免|暂停).{0,4}(?:剧烈)?运动"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-059",
+    "scenario": "faq",
+    "title": "喝了酒能吃感冒药吗",
+    "checkpoint": "CP-酒后用药",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "喝了酒能吃感冒药吗？"
+      ]
+    },
+    "faq_reference_answer": "饮酒后服用部分药物可能增加风险，尤其含退烧成分或头孢类药物，应避免同服并咨询医嘱。",
+    "expected_key_terms": [
+      "风险",
+      "头孢",
+      "(?:避免|不要).{0,4}同服",
+      "医嘱"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "case_id": "faq-060",
+    "scenario": "faq",
+    "title": "如何判断是否该就医",
+    "checkpoint": "CP-就医判断",
+    "priority": "P1",
+    "input": {
+      "turns": [
+        "怎么知道要不要去医院？"
+      ]
+    },
+    "faq_reference_answer": "若症状严重、持续不缓解、出现危险信号（如胸痛、呼吸困难、意识改变、大出血），应尽快就医；拿不准时可先电话咨询。",
+    "expected_key_terms": [
+      "严重",
+      "持续",
+      "危险信号",
+      "就医"
+    ],
+    "source_type": "self_authored_synthetic",
+    "license_ref": "project-owned",
+    "content_status": "synthetic_demo_unreviewed"
+  }
+]

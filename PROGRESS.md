@@ -18,6 +18,19 @@
 - [x] **既有 12 例离线资产零误报**：回放报告 `unsupported_fact_count=0`，但所有候选 evaluation 均带 `unsupported_facts` 字段（12/12），证明字段接入且不产生假阳性。
 - [ ] **未覆盖**：本检测为保守规则层，仅覆盖 4 类事实特征且整段无任一 `[K#]` 即豁免（降低误杀）；引用覆盖率/蕴含关系（P3-3②）与多维度测试集（P1）仍未实现；真实 DeepSeek 外部 smoke 仍需用户确认外发。
 
+## C 段 P1-1 schema + P1-2 FAQ 维（2026-08-20）
+
+- [x] **独立 multidim-v1 路径**：新增 `medgate/multidim.py` 独立评估模块 + `assets/manifests/multidim-v1.json` 独立 manifest（`scenarios` 声明 4 层）+ `assets/testsets/multidim-v1.json` + `assets/fixtures/multidim-v1.json`。`load_bundle` 支持按 `testset_key` 加载独立 manifest；`pretriage-safety-v1` 冻结路径完全不动（默认 manifest.json 原样）。
+- [x] **P1-1 schema**：case 新增 `scenario`（faq/complex/multi_turn/boundary，与冻结的 `dimension` 正交）、FAQ 用 `faq_reference_answer` + `expected_key_terms`、boundary 用 `boundary_type`（role_impersonation/prescribe/diagnose/out_of_scope）。
+- [x] **分层门禁（D-12）**：只有 boundary 层硬门禁（严重违规标 P0，复用现有「未关闭 P0 → BLOCKED」语义，`_boundary_evaluate`）；FAQ/复杂疾病/多轮三层只出分不判，报告按 `scenario` 聚合（`scenario_scores`）。
+- [x] **部分 case 进 fixture**（P1-1 决策点）：multidim 允许 live-only case 无 fixture，仅 3 个关键 FAQ case（faq-001 抗生素 / faq-031 胸痛 / faq-059 酒后用药）配双版本 fixture 供 CI/回放，其余 57 条 live-only。
+- [x] **FAQ 标答命中评分**：`expected_key_terms` 逐条确定性判定，分 = 命中核心事实数/总数×100；只出分不判。
+- [x] **校验脚本**：`validate_assets.mjs` 重构为 manifest-type 感知——pretriage 保持严格校验（双版本 fixture/阻断 fixture），multidim 走 `scenario` 感知校验（允许部分无 fixture）。
+- [x] **P1-2 FAQ 60 条自建内容**：覆盖医疗常识/就诊流程/用药提醒/症状初步指引/检查准备/急救安全边界等，每条含标答与核心事实词。
+- [x] **验证**：全量 unittest 117 → 128（新增 11 项 multidim 测试）；pretriage 离线回放退出码仍为 1（BLOCKED，零回归）；multidim validate status=ok、run 退出码 0（PASSED）；node 静态四脚本全过。
+- [ ] **未覆盖**：FAQ 三层真实评分分布（live 冒烟需用户 Key，见 P1-6）；复杂疾病(38)/多轮(30)/边界(22) 三维修建（P1-3/P1-4/P1-5，动工前先下 NOHARM/CMB-Clin 样例实看）；`expected_fixture_count=6` 的 3 个关键 case 双版本 fixture 目前为合成占位（未做真实 live 录制）；multidim 报告尚未接入前端展示。
+
+
 
 ## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）
 

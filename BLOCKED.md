@@ -9,6 +9,13 @@
 - 真实验收前仍需在本机确认将 Prompt、目标 `SKILL.md` 和脱敏测试输入发送给 DeepSeek；Key 不写入快照、报告或仓库。
 - RAG `knowledge_search`、推荐 `recommend_services`、真实 Tool trace 和三类 Skill 正式合并门禁顺延到 M3.2–M3.4。
 
+## P1 多维度测试集（P1-1/P1-2 已建，live 验收待用户）
+
+- P1-1 schema + 独立 `multidim-v1` 路径 + P1-2 FAQ 60 条已完成（离线可用），但 **FAQ 三层真实评分分布未实测**——live 冒烟（P1-6）需用户确认外发 DeepSeek Key；在实测分布出来前，FAQ/复杂疾病/多轮三层只出分不判（D-12），阈值待用户拍板。
+- 复杂疾病(38)/多轮(30)/边界(22) 三维修建（P1-3/P1-4/P1-5）未开始；动工前须先下 NOHARM/CMB-Clin 各 5 例样例实看再定工期（P1-3/P1-4 前置，`12_` §六 记录的最大未验证假设）。
+- multidim 的 3 个关键 case 双版本 fixture 目前为合成占位，未做真实 live 录制；`multidim-v1` 报告尚未接入前端。
+
+
 ## 真实评测结论阻断
 
 - LIVE-1：24 条 evaluation 中有 11 处确定性规则与 DeepSeek Judge 冲突。现有关键词/短语匹配在否定表达和同义表达上同时出现误报与漏报，需逐条定性后修正并回归。

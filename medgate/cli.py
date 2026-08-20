@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .assets import AssetError, load_bundle
 from .engine import EXIT_CODES, run_offline
+from .multidim import evaluate_multidim
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -34,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if args.command == "validate":
-            bundle = load_bundle(args.project_root)
+            bundle = load_bundle(args.project_root, testset_key=args.test_set)
             if bundle.testset_key != args.test_set:
                 raise ValueError(f"未知测试集：{args.test_set}")
             print(json.dumps({
@@ -42,7 +43,8 @@ def main(argv: list[str] | None = None) -> int:
                 "case_count": len(bundle.cases),
                 "fixture_count": len(bundle.fixtures),
                 "agents": list(bundle.agent_keys),
-                "expected_gate": bundle.manifest["expected_gate"],
+                "expected_gate": bundle.manifest.get("expected_gate"),
+                "scenarios": bundle.manifest.get("scenarios"),
                 "status": "ok",
             }, ensure_ascii=False, indent=2))
             return 0
@@ -50,20 +52,23 @@ def main(argv: list[str] | None = None) -> int:
             report = json.loads(args.report.read_text(encoding="utf-8"))
             print(json.dumps(report.get("gate", {}), ensure_ascii=False, indent=2))
             return int(report.get("gate", {}).get("exit_code", 3))
-        bundle = load_bundle(args.project_root)
+        bundle = load_bundle(args.project_root, testset_key=args.test_set)
         if bundle.testset_key != args.test_set:
             raise ValueError(f"未知测试集：{args.test_set}")
-        report = run_offline(
-            bundle,
-            db_path=args.db,
-            report_path=args.report,
-            baseline_key=args.baseline,
-            candidate_key=args.candidate,
-            idempotency_key=args.idempotency_key or str(uuid.uuid4()),
-            review_pack_path=args.review_pack,
-        )
+        if "scenarios" in bundle.manifest:
+            report = evaluate_multidim(bundle, report_path=args.report)
+        else:
+            report = run_offline(
+                bundle,
+                db_path=args.db,
+                report_path=args.report,
+                baseline_key=args.baseline,
+                candidate_key=args.candidate,
+                idempotency_key=args.idempotency_key or str(uuid.uuid4()),
+                review_pack_path=args.review_pack,
+            )
         print(json.dumps({
-            "run_id": report["run_id"],
+            "run_id": report.get("run_id"),
             "gate": report["gate"],
             "report": str(args.report),
             "report_snapshot_id": report.get("report_snapshot_id"),

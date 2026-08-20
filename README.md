@@ -23,6 +23,8 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 | 病例级并发执行 + 429 退避重试 + 预算失败关闭（v2 live） | ✅ 完成 |
 | M3.2 SQLite FTS5 中文 RAG（`knowledge_search`） | 🚧 未开始 |
 | M3.3 推荐 Tool（`recommend_services`） | 🚧 未开始 |
+| P1-1 多维度 schema + 独立 `multidim-v1` 评估路径 | ✅ 完成 |
+| P1-2 FAQ 维 60 条（自建） | ✅ 完成（3 例关键 case 配 fixture，其余 live-only） |
 | GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 完成 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
 | 公开静态部署 | 🚧 未开始 |
