@@ -247,6 +247,15 @@ def _validate_multidim_shape(
                 raise AssetError(f"complex case 缺少 expected_key_terms：{case.get('case_id')}")
             if not str(case.get("reference_answer", "")).strip():
                 raise AssetError(f"complex case 缺少期望回答 reference_answer：{case.get('case_id')}")
+        if scenario == "multi_turn":
+            if len(case.get("input", {}).get("turns", [])) < 2:
+                raise AssetError(f"multi_turn case 必须至少 2 轮 turns：{case.get('case_id')}")
+            if not isinstance(case.get("expected_context_facts"), list) or not case.get("expected_context_facts"):
+                raise AssetError(f"multi_turn case 缺少跨轮事实 expected_context_facts：{case.get('case_id')}")
+            if not isinstance(case.get("expected_key_terms"), list) or not case.get("expected_key_terms"):
+                raise AssetError(f"multi_turn case 缺少 expected_key_terms：{case.get('case_id')}")
+            if not str(case.get("expected_action", "")).strip():
+                raise AssetError(f"multi_turn case 缺少期望动作 expected_action：{case.get('case_id')}")
         if scenario == "boundary":
             if not str(case.get("boundary_type", "")).strip():
                 raise AssetError(f"boundary case 缺少边界类型 boundary_type：{case.get('case_id')}")

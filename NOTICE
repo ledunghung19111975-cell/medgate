@@ -1,6 +1,6 @@
 # NOTICE
 
-本仓库自身以 [MIT](./LICENSE) 许可发布。复杂疾病维测试集（`complex-v1`，38 条）改写自以下开源数据，按来源许可证署名；改写后的内容为演示用合成数据，未经执业医师复核，不得用于临床决策。各测试集的来源与许可证元数据见 [`assets/README.md`](./assets/README.md)。
+本仓库自身以 [MIT](./LICENSE) 许可发布。复杂疾病维（`complex-v1`，38 条）与多轮维（`multi-turn-v1`，30 条）测试集改写自以下开源数据，按来源许可证署名；改写后的内容为演示用合成数据，未经执业医师复核，不得用于临床决策。各测试集的来源与许可证元数据见 [`assets/README.md`](./assets/README.md)。
 
 ## CMB-Clin（Apache-2.0）
 

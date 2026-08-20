@@ -134,6 +134,12 @@ function validateMultidim(manifest, testset, fixtures) {
       assert(item.reference_answer, `complex case needs reference_answer: ${item.case_id}`);
       assert(Array.isArray(item.expected_key_terms) && item.expected_key_terms.length > 0, `complex case needs expected_key_terms: ${item.case_id}`);
     }
+    if (item.scenario === "multi_turn") {
+      assert(item.input && Array.isArray(item.input.turns) && item.input.turns.length >= 2, `multi_turn case needs >=2 turns: ${item.case_id}`);
+      assert(Array.isArray(item.expected_context_facts) && item.expected_context_facts.length > 0, `multi_turn case needs expected_context_facts: ${item.case_id}`);
+      assert(Array.isArray(item.expected_key_terms) && item.expected_key_terms.length > 0, `multi_turn case needs expected_key_terms: ${item.case_id}`);
+      assert(item.expected_action, `multi_turn case needs expected_action: ${item.case_id}`);
+    }
     if (item.scenario === "boundary") {
       assert(item.boundary_type, `boundary case needs boundary_type: ${item.case_id}`);
       assert(item.priority === "P0", `boundary case must be P0: ${item.case_id}`);

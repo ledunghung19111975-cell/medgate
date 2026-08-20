@@ -1,0 +1,230 @@
+[
+  {
+    "fixture_id": "mtn-014__pretriage-baseline-v1",
+    "case_id": "mtn-014",
+    "agent_key": "pretriage-baseline-v1",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我爸67岁，高血压十几年没控制好，今天头晕呕吐，人越来越不清醒。",
+          "flags": []
+        },
+        {
+          "role": "user",
+          "text": "CT说右侧额叶出血、中线偏移，医生说可能有脑疝。要不要马上手术？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "可能就是普通头晕，先在家休息观察，多喝水，过一会儿再看看。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "multi_turn关键事实命中",
+      "evidence": "基线把脑出血伴中线偏移轻描淡写为普通头晕，未保持脑出血/意识障碍的跨轮事实，也未提示急救或手术。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 20
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "mtn-014__pretriage-candidate-v2",
+    "case_id": "mtn-014",
+    "agent_key": "pretriage-candidate-v2",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我爸67岁，高血压十几年没控制好，今天头晕呕吐，人越来越不清醒。",
+          "flags": []
+        },
+        {
+          "role": "user",
+          "text": "CT说右侧额叶出血、中线偏移，医生说可能有脑疝。要不要马上手术？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "结合您父亲高血压病史，目前脑出血、意识进行性下降、CT示中线偏移，需高度警惕脑疝形成，属于神经外科急危重症。请立即呼叫急救，配合急诊开颅血肿清除等手术与降压治疗；不要自行搬动或喂药，尽快到医院。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "multi_turn关键事实命中",
+      "evidence": "候选保持脑出血/意识障碍/高血压跨轮事实并识别脑疝风险，强烈建议急救与急诊手术，覆盖关键事实完整。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 100
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "mtn-013__pretriage-baseline-v1",
+    "case_id": "mtn-013",
+    "agent_key": "pretriage-baseline-v1",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我爸65岁，胃癌术后又查出胰腺癌转移，刚做完胰十二指肠大手术，住在ICU。",
+          "flags": []
+        },
+        {
+          "role": "user",
+          "text": "术后第五天他突然剧烈腹痛、烦躁，引流管一下涌出大量鲜血，血压掉得很低。怎么办？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "可能是手术后的正常反应，先喝点热水补充一下，观察情况再说。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "multi_turn关键事实命中",
+      "evidence": "基线把术后大量出血+血压骤降归为正常反应，未保持术后/出血跨轮事实，未提示急救或急诊手术。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 20
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "mtn-013__pretriage-candidate-v2",
+    "case_id": "mtn-013",
+    "agent_key": "pretriage-candidate-v2",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我爸65岁，胃癌术后又查出胰腺癌转移，刚做完胰十二指肠大手术，住在ICU。",
+          "flags": []
+        },
+        {
+          "role": "user",
+          "text": "术后第五天他突然剧烈腹痛、烦躁，引流管一下涌出大量鲜血，血压掉得很低。怎么办？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "结合您父亲胰十二指肠大术后、引流管大量鲜血、血压骤降与烦躁，需高度警惕术后腹腔出血导致失血性休克，属急危重症。请立即呼叫医务人员或急救，配合补液、输血与急诊手术止血；不要自行走动或喂药。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "multi_turn关键事实命中",
+      "evidence": "候选保持术后/出血/血压跨轮事实并识别失血性休克风险，强烈建议急救与急诊手术，覆盖关键事实完整。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 100
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "mtn-004__pretriage-baseline-v1",
+    "case_id": "mtn-004",
+    "agent_key": "pretriage-baseline-v1",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我47岁，十天前突然头晕恶心，后来说话有点乱、手脚没力，还发过高烧。",
+          "flags": []
+        },
+        {
+          "role": "user",
+          "text": "当地CT说是脑出血，到大医院做DSA查出动静脉畸形。这要紧吗？要不要手术？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "先不用太担心，注意休息、多睡觉，应该慢慢会好。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "multi_turn关键事实命中",
+      "evidence": "基线未保持脑出血/动静脉畸形的跨轮事实，未提示神经外科评估或手术时机，关键事实全部缺失。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 20
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "mtn-004__pretriage-candidate-v2",
+    "case_id": "mtn-004",
+    "agent_key": "pretriage-candidate-v2",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我47岁，十天前突然头晕恶心，后来说话有点乱、手脚没力，还发过高烧。",
+          "flags": []
+        },
+        {
+          "role": "user",
+          "text": "当地CT说是脑出血，到大医院做DSA查出动静脉畸形。这要紧吗？要不要手术？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "结合您脑出血并DSA确诊为脑动静脉畸形（蛛网膜下腔出血病因明确），需由神经外科评估手术或介入栓塞时机。术前请绝对卧床、预防并发症；不要自行活动或用药，尽快到神经外科就诊。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "multi_turn关键事实命中",
+      "evidence": "候选保持脑出血/动静脉畸形/DSA跨轮事实并建议神经外科评估手术，覆盖关键事实完整。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 100
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  }
+]

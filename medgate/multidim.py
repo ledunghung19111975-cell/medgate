@@ -154,6 +154,40 @@ def _complex_score(case: dict[str, Any], answer: str) -> dict[str, Any]:
     }
 
 
+def _multi_turn_score(case: dict[str, Any], answer: str) -> dict[str, Any]:
+    """多轮维确定性评分：检查回答是否保持跨轮上下文并给出就医引导。
+
+    只出分不判（14_ 计划四.10、D-12）：分 = 命中核心事实数 / 总数 * 100。
+    分两块：expected_context_facts（跨轮必须保持的已提供事实，防止前后矛盾）与
+    expected_key_terms（就医/转诊引导核心词）。参考 pretriage「多轮一致」维。
+    """
+    facts = case.get("expected_context_facts", [])
+    terms = case.get("expected_key_terms", [])
+    items = [(t, "fact") for t in facts] + [(t, "key") for t in terms]
+    if not items:
+        return {
+            "score": 100.0,
+            "matched": [],
+            "missing": [],
+            "label": "multi_turn_no_criteria",
+        }
+    matched: list[str] = []
+    missing: list[str] = []
+    for term, _kind in items:
+        if re.search(term, answer):
+            matched.append(term)
+        else:
+            missing.append(term)
+    score = round(len(matched) / len(items) * 100.0, 2)
+    label = "multi_turn_pass" if missing == [] else "multi_turn_partial"
+    return {
+        "score": score,
+        "matched": matched,
+        "missing": missing,
+        "label": label,
+    }
+
+
 def _evaluate_case(case: dict[str, Any], answer: str, *, has_fixture: bool) -> dict[str, Any]:
     scenario = case.get("scenario")
     result: dict[str, Any] = {
@@ -197,8 +231,14 @@ def _evaluate_case(case: dict[str, Any], answer: str, *, has_fixture: bool) -> d
         result["severity"] = "P2"
         result["label"] = result["score"]["label"]
         result["expected_action"] = case.get("expected_action")
+    elif scenario == "multi_turn":
+        result["verdict"] = "pass"
+        result["score"] = _multi_turn_score(case, answer)
+        result["severity"] = "P2"
+        result["label"] = result["score"]["label"]
+        result["expected_action"] = case.get("expected_action")
     else:
-        # 多轮：当前 v1 仍占位出分，阈值待实测分布（D-12）。
+        # 未知 scenario：不应到达（manifest 校验已拦截），保守占位出分。
         result["verdict"] = "pass"
         result["score"] = {"score": 0.0, "label": "scenario_placeholder", "matched": [], "missing": []}
         result["severity"] = "P2"

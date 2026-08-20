@@ -55,6 +55,15 @@
 - [x] **验证**：全量 unittest 128 → 129；multidim-v1 现 82 例（FAQ 60 + 边界 22）、fixture 8（4 个关键 case × 2 版本）；22 边界 case 合规拒绝 PASS + 违规 FAIL(P0) 全部通过；离线 evaluate 门禁 PASSED（boundary_fail_count=0，live-only 未评估不计）；pretriage 离线回放退出码仍 1（零回归）；node 静态四脚本全过。
 - [ ] **未覆盖**：边界层真实回答的 live 冒烟（P1-6，用户 Key）；复杂疾病(38)/多轮(30) 两维修建（P1-4/P1-5，动工前先下 CMB-Clin 样例实看）；multidim 报告未接前端；多轮/复杂层仍为占位出分。
 
+## C 段 P1-5 多轮维 30 条（2026-08-20）
+
+- [x] **Chinese-medical-dialogue 实看判定不适用**：两个同名来源均实看——HF `ticoAg/Chinese-medical-dialogue`（Apache-2.0，800k 行）与 GitHub `Toyhom/Chinese-medical-dialogue-data`（MIT，792099 条）都是**单轮问答对**（`history=null` / `question→answer`），无多轮 turns、无跨轮上下文，作为多轮改写原料结构不匹配。**P1-5 30 条改为全部基于 CMB-Clin 多轮 QA 改写**（`12_` §六、`14_` P1-5 已同步）。
+- [x] **独立 `multi-turn-v1` 路径**：`assets/manifests/multi-turn-v1.json`（`source_type=rewritten_from_cmb_clin`、`license_ref=Apache-2.0 (FreedomIntelligence/CMB)`）+ `assets/testsets/multi-turn-v1.json`（30 条，未在 complex-v1 用过的病例）+ `assets/fixtures/multi-turn-v1.json`（3 个关键 case × 双版本 = 6）。
+- [x] **multi_turn case schema**：`input.turns` ≥ 2 轮、`expected_context_facts`（跨轮必须保持的已提供事实，防前后矛盾）、`expected_key_terms`（就医/转诊引导词）、`expected_action`、`reference_answer`。`assets.py` 与 `validate_assets.mjs` 均补 multi_turn 维校验（至少 2 轮）。
+- [x] **multi_turn 层确定性评分**：`medgate/multidim.py::_multi_turn_score`——同时检查跨轮事实保持与就医引导，命中比例出分（只出分不判，D-12，不参与 Gate）；原「未知 scenario 占位」分支收紧为不可达防御。
+- [x] **验证**：全量 unittest 134 → 145（新增 multi_turn 评分 3 + bundle/离线报告 2）；`medgate validate --test-set multi-turn-v1` status=ok；multi-turn-v1 离线 run 退出码 0（PASSED，3 例 fixture 满分）；pretriage 离线回放退出码仍 1（零回归）；complex-v1 退出码仍 0（零回归）；node 静态四脚本全过；四个 manifest 全部 validate ok。
+- [ ] **未覆盖**：27/30 例 live-only（无真实回答，离线按 0 分）；多轮层真实评分分布需 live 冒烟（P1-6，用户 Key）；多轮回答的实际跨轮一致性需真实模型评估（确定性规则只覆盖字面保持）；multidim 报告未接前端；CMB-Clin 病例为真实临床病例改写、期望回答**未经执业医师复核**，不得用于临床决策。
+
 ## C 段 P1-4 复杂疾病维 38 条（2026-08-20）
 
 - [x] **CMB-Clin 实看（74 例全量）**：`FreedomIntelligence/CMB` 的 `data/CMB/CMB-Clin/CMB-Clin-qa.json`（Apache-2.0）——每例含 `title`（疾病）、`description`（病史/查体/检查）、`QA_pairs`（诊断/鉴别诊断/治疗原则）。判定可用：改写为 MedGate C 端口吻复杂疾病场景，期望回答参考 Doctronic-SOAP 样本的 Assessment & Plan 形态（鉴别诊断排序 + 计划/就医引导）。筛选 38 例，剔除 7 例（颅内 AVM-SAH 与动脉瘤-SAH 重复、脑疝/断指/膈下脓肿纯急诊专科、垂体腺瘤/胰岛素瘤罕见、ED 偏私密）。

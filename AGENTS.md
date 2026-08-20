@@ -52,7 +52,7 @@ python3 00_工作台/scripts/context-bootstrap.py MedGate
 # 依赖（本地事实源是 uv.lock；CI 用 pip 装 pyproject 的有界依赖）
 python3 -m venv .venv && ./.venv/bin/pip install -e .
 
-# 单元测试：当前 140 项，ResourceWarning 视为错误
+# 单元测试：当前 145 项，ResourceWarning 视为错误
 ./.venv/bin/python -B -W error::ResourceWarning -m unittest discover -s tests
 
 # 资产与 manifest 校验（应 status=ok、fixture_count=24）

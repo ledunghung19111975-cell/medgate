@@ -28,7 +28,7 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 | P1-3 边界维 22 条（自建，NOHARM 实看后判定不适用撤下） | ✅ 离线可复现（bnd-013 配 fixture；21 例 live-only 未评估 → 整体 `REVIEW_REQUIRED`，见下） |
 | P1-4 复杂疾病维 38 条（CMB-Clin Apache-2.0 改写，独立 `complex-v1`） | ✅ 离线可复现（3 例关键 case 配 fixture，其余 live-only） |
 | GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 离线可复现（每次 push 实跑，见页首徽章） |
-| P1-5 多轮维 30 条 | 🚧 未开始（live 路径接入 multidim/complex 为 P1-6/P2-1 前置） |
+| P1-5 多轮维 30 条（CMB-Clin 多轮 QA 改写，独立 `multi-turn-v1`） | ✅ 离线可复现（3 例关键 case 配 fixture，其余 live-only） |
 | M3.2 SQLite FTS5 中文 RAG（`knowledge_search`）、M3.3 推荐 Tool | 🚧 未开始 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
 | 公开静态部署 | ❌ 已取消（2026-08-20 用户裁决：使用方式为本地下载运行） |
@@ -92,7 +92,7 @@ examples/agent-pack/   Baseline / Candidate 两套本地 Agent 配置包与脱�
 examples/live-reports/ 两份真实 DeepSeek live run 报告快照（BLOCKED 与 REVIEW_REQUIRED 各一）
 prototype/        五页面本地工作台（总览 / 测评集详情 / 评测详情 / 病例详情 / 发布门禁）
 scripts/          资产与原型静态校验脚本（node）
-tests/            unittest 回归（当前 140 项）
+tests/            unittest 回归（当前 145 项）
 00_~15_*.md       项目说明、需求、技术、审核、竞品、决策、方案与迭代计划文档
 LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见 LICENSES/，署名见 NOTICE）
 ```

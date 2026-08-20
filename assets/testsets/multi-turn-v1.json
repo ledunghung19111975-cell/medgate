@@ -1,0 +1,910 @@
+[
+  {
+    "case_id": "mtn-001",
+    "scenario": "multi_turn",
+    "title": "反复尿路结石伴血钙升高（甲状旁腺功能亢进排查）",
+    "checkpoint": "CP-多轮-内分泌",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我四十多岁，这几年反复长尿路结石，最近体检发现血钙偏高，医生说可能和甲状旁腺有关。",
+        "B超和核素扫描说甲状腺后面有个小肿块，考虑甲状旁腺来源。我这种情况要紧吗？需要手术吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "血钙",
+      "甲状旁腺",
+      "尿路结石"
+    ],
+    "reference_answer": "反复尿路结石伴血钙升高、甲状旁腺素升高、超声/核素示甲状旁腺来源肿块，首先考虑原发性甲状旁腺功能亢进。鉴别诊断包括继发性甲旁亢（常见于尿毒症等）。建议尽快到内分泌科或甲状腺外科就诊，明确后主要采用手术治疗；不要自行补钙或盲目排石。",
+    "expected_key_terms": [
+      "内分泌",
+      "甲状旁腺",
+      "就医",
+      "手术",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 4"
+  },
+  {
+    "case_id": "mtn-002",
+    "scenario": "multi_turn",
+    "title": "幼儿无痛性腹部肿块（肾母细胞瘤排查）",
+    "checkpoint": "CP-多轮-小儿肿瘤",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我家3岁儿子，几个月前洗澡时发现右腹部有个不痛的大包块，最近好像变大了。",
+        "B超和CT说是右肾的囊实性占位，孩子还偶尔低热、没胃口。会不会是肿瘤？该怎么办？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "右肾",
+      "占位",
+      "无痛"
+    ],
+    "reference_answer": "幼儿无痛性腹部肿块、超声/CT示右肾囊实性占位，需高度警惕肾母细胞瘤，鉴别包括巨大肾积水、神经母细胞瘤等。建议尽快到小儿肿瘤科或小儿泌尿外科就诊，完善分期检查后综合治疗（手术+放化疗可显著提高生存率），不要因不痛而拖延。",
+    "expected_key_terms": [
+      "小儿",
+      "肿瘤",
+      "就医",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 5"
+  },
+  {
+    "case_id": "mtn-003",
+    "scenario": "multi_turn",
+    "title": "青少年贫血伴脾大（遗传性球形红细胞增多症排查）",
+    "checkpoint": "CP-多轮-血液",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我家孩子12岁，活动后头晕乏力好几年，一直当贫血治。",
+        "最近脸色发黄，医生摸到脾大，血常规说球形红细胞增多。这是怎么回事？要紧吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "贫血",
+      "脾大",
+      "球形红细胞"
+    ],
+    "reference_answer": "青少年贫血、脾大、黄疸，血常规见球形红细胞增多，首先考虑遗传性球形红细胞增多症，需做红细胞渗透脆性试验确诊。鉴别包括其他溶血性贫血。建议尽快到血液科就诊评估；确诊后脾切除是有效治疗手段，具体需由医生评估。",
+    "expected_key_terms": [
+      "血液",
+      "就医",
+      "脾",
+      "评估"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 10"
+  },
+  {
+    "case_id": "mtn-004",
+    "scenario": "multi_turn",
+    "title": "突发头痛言语混乱后查出脑动静脉畸形（SAH排查）",
+    "checkpoint": "CP-多轮-神经外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我47岁，十天前突然头晕恶心，后来说话有点乱、手脚没力，还发过高烧。",
+        "当地CT说是脑出血，到大医院做DSA查出动静脉畸形。这要紧吗？要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "脑出血",
+      "动静脉畸形",
+      "DSA"
+    ],
+    "reference_answer": "已明确为脑动静脉畸形破裂导致的蛛网膜下腔出血，诊断需以DSA/CTA/MRA为准。鉴别诊断包括海绵状血管瘤、血管母细胞瘤、颅内动脉瘤、烟雾病等。建议尽快到神经外科就诊，评估介入栓塞或手术治疗的时机；术前需绝对卧床、预防并发症，不要自行活动或用药。",
+    "expected_key_terms": [
+      "神经外科",
+      "(?:就医|就诊)",
+      "手术",
+      "DSA",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 12"
+  },
+  {
+    "case_id": "mtn-005",
+    "scenario": "multi_turn",
+    "title": "青年难治性高血压伴肾动脉狭窄（肾血管性高血压排查）",
+    "checkpoint": "CP-多轮-心血管/肾",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我33岁，最近头晕视物模糊，一量血压非常高，吃了降压药也降不下来。",
+        "医生说我腹部能听到血管杂音，B超和造影发现左肾动脉狭窄。这高血压和肾动脉有关吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "血压",
+      "肾动脉狭窄",
+      "血管杂音"
+    ],
+    "reference_answer": "青年难治性高血压、腹部血管杂音、影像证实肾动脉狭窄，首先考虑肾血管性高血压，需与肾实质性高血压鉴别。建议到心内科或肾内科就诊，评估介入（球囊扩张/支架）或药物方案；不要自行调降压药，需医生根据狭窄程度指导。",
+    "expected_key_terms": [
+      "肾动脉",
+      "就医",
+      "高血压",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 15"
+  },
+  {
+    "case_id": "mtn-006",
+    "scenario": "multi_turn",
+    "title": "隐睾术后左下腹包块渐大（隐睾癌变排查）",
+    "checkpoint": "CP-多轮-泌尿肿瘤",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我38岁，小时候做过双侧隐睾手术，左边阴囊一直空。最近发现左下腹有个包块在慢慢变大。",
+        "B超CT说是左下腹囊实性包块，和精索有关，还有肿瘤标志物升高。会不会是恶性的？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "隐睾",
+      "包块",
+      "左下腹"
+    ],
+    "reference_answer": "隐睾病史者原隐睾部位出现逐渐增大的囊实性包块、肿瘤标志物升高，需高度警惕隐睾恶变（睾丸肿瘤可能），同时也需评估不育问题。建议尽快到泌尿外科就诊，完善肿瘤标志物与影像分期后手术，不要拖延。",
+    "expected_key_terms": [
+      "泌尿外科",
+      "就医",
+      "肿瘤",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 16"
+  },
+  {
+    "case_id": "mtn-007",
+    "scenario": "multi_turn",
+    "title": "胸闷伴前纵隔肿块（纵隔畸胎瘤排查）",
+    "checkpoint": "CP-多轮-胸外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我42岁，最近三周胸闷，胸片说上纵隔增宽，不咳嗽不咽不下东西。",
+        "CT发现前纵隔有个肿块，含脂肪和钙化成分。这是什么东西？要紧吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "纵隔",
+      "肿块",
+      "CT"
+    ],
+    "reference_answer": "前纵隔含脂肪、钙化成分的肿块，首先考虑纵隔畸胎瘤（多良性，约10%可恶性）。鉴别包括胸腺瘤、淋巴瘤等纵隔肿瘤。建议尽快到胸外科就诊，完善胸部增强CT评估后手术切除明确病理；不要自行判断或拖延。",
+    "expected_key_terms": [
+      "胸外科",
+      "就医",
+      "手术",
+      "肿瘤"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 22"
+  },
+  {
+    "case_id": "mtn-008",
+    "scenario": "multi_turn",
+    "title": "小肠切除术后大量腹泻消瘦（短肠综合征排查）",
+    "checkpoint": "CP-多轮-胃肠外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我25岁，一年前车祸小肠受伤做过两次切除手术，现在每天拉十几次水样便。",
+        "一个月体重掉了4公斤，还没力气。这和切掉的小肠有关吗？该怎么办？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "小肠",
+      "腹泻",
+      "体重"
+    ],
+    "reference_answer": "多次小肠切除术后出现大量腹泻、电解质紊乱、体重明显下降，符合短肠综合征急性期表现。建议尽快到胃肠外科或营养科就诊，评估是否需要全胃肠外营养支持、抑制肠蠕动与抑酸药物，必要时少量肠内营养；不要自行止泻或拖延。",
+    "expected_key_terms": [
+      "胃肠",
+      "就医",
+      "营养",
+      "电解质"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 24"
+  },
+  {
+    "case_id": "mtn-009",
+    "scenario": "multi_turn",
+    "title": "肺炎抗炎后高热不退伴胸腔积液（急性脓胸排查）",
+    "checkpoint": "CP-多轮-胸外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我妈64岁，发烧咳嗽两周，输液抗炎一周没见好转，复查胸片说左胸腔积液明显增多。",
+        "现在憋气更重了，医生怀疑脓胸。要紧吗？怎么治？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "胸腔积液",
+      "发热",
+      "咳嗽"
+    ],
+    "reference_answer": "肺炎抗炎后高热不退、胸腔积液增多、憋气加重，需高度怀疑肺炎后急性脓胸。建议尽快到胸外科或呼吸科就诊，完善胸部CT、胸腔B超与胸腔穿刺明确（穿刺抽脓可确诊并指导用药）；脓液浓稠时通常需胸腔闭式引流，不要拖延。",
+    "expected_key_terms": [
+      "胸外科",
+      "就医",
+      "引流",
+      "穿刺"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 25"
+  },
+  {
+    "case_id": "mtn-010",
+    "scenario": "multi_turn",
+    "title": "婴儿黄疸不退伴陶土样大便（胆道闭锁排查）",
+    "checkpoint": "CP-多轮-小儿外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我家6个月宝宝，出生后黄疸一直不退，大便颜色很浅像陶土，小便很黄。",
+        "化验说胆红素高，主要是直接胆红素，CT说肝内胆管扩张。是不是胆道闭锁？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "黄疸",
+      "大便色浅",
+      "胆红素"
+    ],
+    "reference_answer": "婴儿出生后黄疸进行性加重、陶土样大便、直接胆红素升高、CT示胆管扩张，需高度警惕先天性胆道闭锁，鉴别包括新生儿肝炎、新生儿溶血病等。建议尽快到小儿外科就诊，尽早评估手术（Kasai或肝移植）；不要拖延，越早干预效果越好。",
+    "expected_key_terms": [
+      "小儿外科",
+      "就医",
+      "手术",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 26"
+  },
+  {
+    "case_id": "mtn-011",
+    "scenario": "multi_turn",
+    "title": "新生儿头围增大伴矢状缝闭合（矢状缝早闭排查）",
+    "checkpoint": "CP-多轮-小儿神经外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我家宝宝出生25天，体检发现头围偏大。",
+        "CT说矢状缝闭合、头前后径长。这要紧吗？要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "头围",
+      "矢状缝",
+      "闭合"
+    ],
+    "reference_answer": "新生儿头围增大、影像证实矢状缝早闭，需到小儿神经外科评估。矢状缝早闭通常建议尽早手术（出生后3-6个月内效果最好），方式包括内镜辅助或开放手术；若暂不处理需密切随访颅压与神经发育，不要自行拖延。",
+    "expected_key_terms": [
+      "小儿神经外科",
+      "就医",
+      "手术",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 27"
+  },
+  {
+    "case_id": "mtn-012",
+    "scenario": "multi_turn",
+    "title": "突发抽搐后MRI示脑内占位（胶质瘤排查）",
+    "checkpoint": "CP-多轮-神经外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我48岁，六天前突然全身抽搐、意识丧失，清醒后左手没力发麻。",
+        "MRI说右额顶脑内有个占位。会不会是肿瘤？要紧吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "抽搐",
+      "脑内占位",
+      "MRI"
+    ],
+    "reference_answer": "以癫痫发作为首发、MRI示脑内局灶占位，需考虑低级别胶质瘤可能，鉴别包括其他颅内肿瘤。建议尽快到神经外科就诊，评估手术切除（可明确病理、缓解占位并预防癫痫），不要拖延。",
+    "expected_key_terms": [
+      "神经外科",
+      "就医",
+      "手术",
+      "肿瘤"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 30"
+  },
+  {
+    "case_id": "mtn-013",
+    "scenario": "multi_turn",
+    "title": "大手术后突发剧烈腹痛引流管大量出血（术后失血性休克）",
+    "checkpoint": "CP-多轮-急症",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我爸65岁，胃癌术后又查出胰腺癌转移，刚做完胰十二指肠大手术，住在ICU。",
+        "术后第五天他突然剧烈腹痛、烦躁，引流管一下涌出大量鲜血，血压掉得很低。怎么办？"
+      ]
+    },
+    "expected_action": "suggest_emergency",
+    "expected_context_facts": [
+      "术后",
+      "出血",
+      "血压"
+    ],
+    "reference_answer": "大手术后突发剧烈腹痛、引流管大量鲜血、血压骤降、烦躁，需高度警惕术后腹腔出血导致失血性休克，属急危重症。应立即呼叫医务人员/急救，配合补液、输血与急诊手术止血；不要自行走动或喂药。",
+    "expected_key_terms": [
+      "急救",
+      "急诊",
+      "出血",
+      "手术",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 34"
+  },
+  {
+    "case_id": "mtn-014",
+    "scenario": "multi_turn",
+    "title": "高血压脑出血后意识进行性下降（脑疝可能）",
+    "checkpoint": "CP-多轮-急症神经外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我爸67岁，高血压十几年没控制好，今天头晕呕吐，人越来越不清醒。",
+        "CT说右侧额叶出血、中线偏移，医生说可能有脑疝。要不要马上手术？"
+      ]
+    },
+    "expected_action": "suggest_emergency",
+    "expected_context_facts": [
+      "脑出血",
+      "意识",
+      "高血压"
+    ],
+    "reference_answer": "高血压患者突发头晕呕吐、意识进行性下降，CT示脑出血、中线偏移、瞳孔改变，需高度警惕脑疝形成，属神经外科急危重症。应立即呼叫急救，配合急诊开颅血肿清除与降压治疗；不要自行搬动或喂药，尽快到医院。",
+    "expected_key_terms": [
+      "急救",
+      "急诊",
+      "脑疝",
+      "手术",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 40"
+  },
+  {
+    "case_id": "mtn-015",
+    "scenario": "multi_turn",
+    "title": "青年突发头痛后CT示SAH查出烟雾病",
+    "checkpoint": "CP-多轮-神经外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我31岁，两个月前工作时突发剧烈头痛，当时在当地按高血压治，头痛一直没好。",
+        "到医院CT说蛛网膜下腔出血，DSA查出烟雾病。这病严重吗？怎么治？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "蛛网膜下腔出血",
+      "烟雾病",
+      "头痛"
+    ],
+    "reference_answer": "青年突发头痛、CT示蛛网膜下腔出血、DSA确诊烟雾病，需到神经外科评估。烟雾病可同时有出血与缺血表现，治疗原则为先保守控制出血、二期手术处理原发病灶（动脉搭桥等）。建议尽快到有经验的神经外科就诊，不要自行用药或拖延。",
+    "expected_key_terms": [
+      "神经外科",
+      "就医",
+      "手术",
+      "烟雾病"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 41"
+  },
+  {
+    "case_id": "mtn-016",
+    "scenario": "multi_turn",
+    "title": "大便习惯改变伴家族结肠癌史（家族性腺瘤性息肉病排查）",
+    "checkpoint": "CP-多轮-胃肠肿瘤",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我31岁，最近两个月大便次数变多、变稀，偶尔有黑便，父亲和叔叔都得过结肠癌。",
+        "肠镜发现全结肠有好几百个息肉。这要紧吗？要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "黑便",
+      "息肉",
+      "家族史"
+    ],
+    "reference_answer": "大便习惯改变、黑便、家族性结肠癌病史、肠镜示数百枚息肉，需考虑家族性腺瘤性息肉病（FAP），该病癌变风险很高。建议尽快到胃肠外科就诊，评估全结直肠切除手术；同时建议家族成员筛查，不要拖延。",
+    "expected_key_terms": [
+      "胃肠",
+      "就医",
+      "手术",
+      "息肉",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 45"
+  },
+  {
+    "case_id": "mtn-017",
+    "scenario": "multi_turn",
+    "title": "隐睾术后阴囊无痛性肿块（睾丸肿瘤排查）",
+    "checkpoint": "CP-多轮-泌尿肿瘤",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我32岁，发现右边阴囊变大一个月，不疼，小时候做过隐睾下降手术。",
+        "B超说右侧睾丸增大有肿块，CT也有占位。会不会是肿瘤？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "阴囊",
+      "睾丸肿块",
+      "隐睾"
+    ],
+    "reference_answer": "隐睾病史者出现阴囊无痛性肿块、睾丸增大变硬，需高度警惕睾丸肿瘤（隐睾发生肿瘤机会显著升高）。建议尽快到泌尿外科就诊，完善肿瘤标志物（AFP/HCG/LDH）与分期检查后手术根治，不要因不痛而拖延。",
+    "expected_key_terms": [
+      "泌尿外科",
+      "就医",
+      "肿瘤",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 47"
+  },
+  {
+    "case_id": "mtn-018",
+    "scenario": "multi_turn",
+    "title": "牧区生活史后发热伴肝占位（肝包虫病排查）",
+    "checkpoint": "CP-多轮-肝胆感染",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我35岁，小时候在牧区长大、接触过羊和狗。最近半个月发热咳嗽，之后又上腹胀痛。",
+        "B超CT说肝内有个囊性占位，胆管还扩张。这是什么病？要紧吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "牧区",
+      "肝占位",
+      "发热"
+    ],
+    "reference_answer": "牧区生活史、羊犬接触史、发热后出现肝囊性占位伴胆管扩张，需高度考虑肝囊型包虫病合并胆瘘可能。建议尽快到肝胆外科或感染科就诊，完善卡松尼试验等免疫学检查明确；确诊后通常需手术并辅以阿苯达唑治疗，不要自行判断。",
+    "expected_key_terms": [
+      "肝胆",
+      "就医",
+      "包虫",
+      "手术"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 48"
+  },
+  {
+    "case_id": "mtn-019",
+    "scenario": "multi_turn",
+    "title": "胆管炎病史后腹痛发热黄疸（膈下脓肿/胆管炎排查）",
+    "checkpoint": "CP-多轮-急症胆道",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我49岁，有胆囊结石和胆管炎病史十多年。最近半个月腹痛腹胀发热，皮肤黄了一周。",
+        "B超说胆管扩张有结石，平片说右膈下有液气平面。是不是脓肿？要紧吗？"
+      ]
+    },
+    "expected_action": "suggest_emergency",
+    "expected_context_facts": [
+      "发热",
+      "黄疸",
+      "腹痛"
+    ],
+    "reference_answer": "胆管炎病史者出现腹痛、高热、黄疸（Charcot三联征）、右膈下液气平面，需高度警惕急性化脓性梗阻性胆管炎合并膈下脓肿，属外科急危重症。应立即到急诊就诊，通常需穿刺引流/内镜减压+抗生素，不要自行用药或拖延。",
+    "expected_key_terms": [
+      "急诊",
+      "胆管炎",
+      "就医",
+      "引流",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 50"
+  },
+  {
+    "case_id": "mtn-020",
+    "scenario": "multi_turn",
+    "title": "儿童腹痛高热黄疸伴胆总管囊样扩张（先天性胆管扩张排查）",
+    "checkpoint": "CP-多轮-小儿外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我家7岁孩子，三天前开始肚子疼、寒战高热，今天皮肤和眼睛都黄了，大便发白。",
+        "CT说胆总管呈巨大囊样扩张。这是什么病？要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "腹痛",
+      "黄疸",
+      "胆总管"
+    ],
+    "reference_answer": "儿童腹痛、寒战高热、黄疸、陶土样大便，CT示胆总管囊样扩张，需考虑先天性胆管囊性扩张（可能合并胆道感染）。建议尽快到小儿外科就诊，控制感染后择期手术（囊肿切除+胆肠吻合）；出现感染加重需急诊，不要拖延。",
+    "expected_key_terms": [
+      "小儿外科",
+      "就医",
+      "手术",
+      "黄疸"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 51"
+  },
+  {
+    "case_id": "mtn-021",
+    "scenario": "multi_turn",
+    "title": "车祸术后高热低血压腹腔高压（腹腔间隔室综合征排查）",
+    "checkpoint": "CP-多轮-急症",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我家里人车祸外伤小肠切除术后，一直高热、血压低，转到ICU用呼吸机。",
+        "医生说腹腔压力很高、多脏器功能不好。这要紧吗？还有救吗？"
+      ]
+    },
+    "expected_action": "suggest_emergency",
+    "expected_context_facts": [
+      "术后",
+      "高热",
+      "腹腔高压"
+    ],
+    "reference_answer": "车祸外伤术后出现腹腔高压、持续高热、低血压、多脏器功能障碍，需考虑腹腔间隔室综合征合并脓毒症，属急危重症。应配合ICU综合治疗（抗感染、引流、控制腹腔压力、液体复苏等），不要自行处理或延误，尽早与医生沟通病情。",
+    "expected_key_terms": [
+      "急诊",
+      "ICU",
+      "就医",
+      "腹腔高压"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 53"
+  },
+  {
+    "case_id": "mtn-022",
+    "scenario": "multi_turn",
+    "title": "肢端肥大伴视力下降（垂体腺瘤排查）",
+    "checkpoint": "CP-多轮-神经外科/内分泌",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我52岁，十多年手脚变粗、面容变宽、睡觉打鼾多汗，最近半年视力明显下降。",
+        "查了激素说生长激素高，MRI发现垂体有肿瘤。要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "肢端肥大",
+      "生长激素",
+      "视力"
+    ],
+    "reference_answer": "肢端肥大、生长激素与IGF-1升高、MRI示鞍区占位并压迫视交叉，需考虑生长激素型垂体腺瘤。建议尽快到神经外科或内分泌科就诊，手术切除是首选，辅以药物/放疗；视力受损提示压迫明显，不要拖延。",
+    "expected_key_terms": [
+      "神经外科",
+      "就医",
+      "手术",
+      "垂体",
+      "尽早"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 56"
+  },
+  {
+    "case_id": "mtn-023",
+    "scenario": "multi_turn",
+    "title": "反复发作性低血糖伴神志不清（胰岛素瘤排查）",
+    "checkpoint": "CP-多轮-内分泌/胰腺",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我33岁，经常饭前心慌、出汗、乏力，严重时神志不清，吃了东西半小时能缓过来。",
+        "检查发现胰头有个小瘤子，考虑胰岛素瘤。怎么治？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "低血糖",
+      "神志不清",
+      "胰头"
+    ],
+    "reference_answer": "发作性低血糖（Whipple三联征）、饥饿试验证实高胰岛素性低血糖、胰腺影像示胰头结节，需考虑胰岛素瘤。建议尽快到内分泌科或胰腺外科就诊，确诊后尽早手术摘除；术前按时加餐防低血糖，不要自行处理。",
+    "expected_key_terms": [
+      "内分泌",
+      "就医",
+      "手术",
+      "低血糖"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 57"
+  },
+  {
+    "case_id": "mtn-024",
+    "scenario": "multi_turn",
+    "title": "重度肥胖减重困难（肥胖症评估）",
+    "checkpoint": "CP-多轮-减重代谢",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我32岁，体型发胖十多年，食欲好、爱吃油炸甜食，试过控制饮食运动针灸都没用，体重一直涨。",
+        "现在BMI43，走路气喘、关节疼。还有别的办法吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "肥胖",
+      "BMI",
+      "减重"
+    ],
+    "reference_answer": "重度肥胖（BMI 43.7）经生活方式干预效果不佳并出现关节痛、活动受限，需评估是否合并代谢疾病并考虑减重手术。建议到减重代谢外科或内分泌科就诊，完善代谢评估后由医生判断手术指征与方式；不要盲目节食或自行用药。",
+    "expected_key_terms": [
+      "减重",
+      "内分泌",
+      "就医",
+      "评估"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 59"
+  },
+  {
+    "case_id": "mtn-025",
+    "scenario": "multi_turn",
+    "title": "上腹隐痛伴胃镜粘膜下占位（胃间质瘤排查）",
+    "checkpoint": "CP-多轮-胃肠外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我29岁，间断上腹痛一个月，还有便潜血阳性、有点贫血。",
+        "胃镜发现胃大弯有个3cm的粘膜下隆起肿物，内镜超声说起源于肌层。会不会是肿瘤？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "胃",
+      "占位",
+      "贫血"
+    ],
+    "reference_answer": "上腹隐痛、消化道出血征象、胃镜示胃壁肌层来源的粘膜下肿瘤，需考虑胃肠道间质瘤（GIST）可能。建议尽快到胃肠外科就诊，完善腹部增强CT与手术切除明确病理，GIST应按危险度评估治疗；不要自行判断良恶性或拖延。",
+    "expected_key_terms": [
+      "胃肠",
+      "就医",
+      "手术",
+      "间质瘤"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 61"
+  },
+  {
+    "case_id": "mtn-026",
+    "scenario": "multi_turn",
+    "title": "右腰钝痛伴立位肾下垂（肾下垂排查）",
+    "checkpoint": "CP-多轮-泌尿外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我28岁，半年来右腰持续钝痛，还常心悸、乏力、失眠。",
+        "B超说我站立时右肾比卧位低6cm。这是什么问题？要紧吗？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "腰痛",
+      "肾下垂",
+      "尿检"
+    ],
+    "reference_answer": "右腰钝痛伴立位肾下移超过一定幅度、尿检偶见红细胞，需考虑肾下垂。鉴别包括先天性异位肾、腹膜后肿瘤推移等。建议到泌尿外科就诊，完善立卧位尿路造影评估；多数保守（腹肌锻炼、肾托），症状重者才考虑手术，不要自行判断。",
+    "expected_key_terms": [
+      "泌尿外科",
+      "就医",
+      "评估",
+      "肾"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 66"
+  },
+  {
+    "case_id": "mtn-027",
+    "scenario": "multi_turn",
+    "title": "活动后心慌胸闷伴房间隔缺损（先心病排查）",
+    "checkpoint": "CP-多轮-心外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我52岁，两年活动后心慌胸闷呼吸困难，最近感冒后更重。",
+        "心脏彩超说房间隔有个2.7cm缺损、右心增大、肺动脉压增高。要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "心慌",
+      "房间隔缺损",
+      "肺动脉压"
+    ],
+    "reference_answer": "活动后心慌胸闷、胸骨左缘杂音、超声示房间隔缺损伴右心增大与肺动脉高压，需到心外科或心内科评估手术指征。大龄合并肺动脉高压者术前需右心导管评估肺血管阻力；有明显症状或心脏扩大通常是手术指征，不要拖延。",
+    "expected_key_terms": [
+      "心外科",
+      "就医",
+      "手术",
+      "评估"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 67"
+  },
+  {
+    "case_id": "mtn-028",
+    "scenario": "multi_turn",
+    "title": "糖尿病伴勃起功能下降（糖尿病性ED评估）",
+    "checkpoint": "CP-多轮-男科/内分泌",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我46岁，近一年勃起不坚，最近三个月更重，有糖尿病史。",
+        "查了性激素正常，血糖很高。这和糖尿病有关吗？怎么治？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "勃起不坚",
+      "糖尿病",
+      "血糖"
+    ],
+    "reference_answer": "勃起不坚渐重伴糖尿病、空腹血糖明显升高，需考虑糖尿病性勃起功能障碍（器质性），也需与心理性ED及血管、神经性ED鉴别。建议到男科或内分泌科就诊，控制血糖是基础，可配合5型磷酸二酯酶抑制剂等综合治疗；不要自行乱用药。",
+    "expected_key_terms": [
+      "男科",
+      "内分泌",
+      "就医",
+      "血糖",
+      "不要自行"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 68"
+  },
+  {
+    "case_id": "mtn-029",
+    "scenario": "multi_turn",
+    "title": "上腹痛伴胸背胀痛及肝内胆管结石（肝内胆管结石排查）",
+    "checkpoint": "CP-多轮-肝胆外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我62岁，上腹痛伴胸背部胀痛一个月，这两天加重，没有黄疸发热。",
+        "B超CT说左肝内胆管多发结石、肝左叶萎缩。要不要手术？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "上腹痛",
+      "肝内胆管结石",
+      "肝萎缩"
+    ],
+    "reference_answer": "上腹痛伴胸背不适、影像示左肝内胆管多发结石并肝叶萎缩，需考虑肝内胆管结石合并肝萎缩，鉴别包括肝外胆管结石、肝胆管癌等。建议尽快到肝胆外科就诊评估手术（病变肝叶切除）；反复感染或出现黄疸、发热需急诊。",
+    "expected_key_terms": [
+      "肝胆",
+      "就医",
+      "手术",
+      "结石"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 69"
+  },
+  {
+    "case_id": "mtn-030",
+    "scenario": "multi_turn",
+    "title": "阴囊经久不愈的溃疡（阴囊Paget病排查）",
+    "checkpoint": "CP-多轮-泌尿外科",
+    "priority": "P2",
+    "input": {
+      "turns": [
+        "我67岁，阴囊靠近阴茎根部有块皮肤溃疡三年，一直当湿疹擦药没好，还在扩大。",
+        "最近活检说是Paget病。这是癌症吗？怎么治？"
+      ]
+    },
+    "expected_action": "refer_specialty",
+    "expected_context_facts": [
+      "阴囊",
+      "溃疡",
+      "活检"
+    ],
+    "reference_answer": "阴囊经久不愈、按湿疹治疗无效并扩大的皮损，活检确诊阴囊Paget病（皮肤恶性肿瘤），需与慢性湿疹鉴别。建议尽快到泌尿外科或皮肤科就诊，评估腹股沟淋巴结转移后手术切除；不要自行用药或拖延。",
+    "expected_key_terms": [
+      "泌尿外科",
+      "就医",
+      "手术",
+      "活检"
+    ],
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed",
+    "attribution": "rewritten from CMB-Clin case 73"
+  }
+]

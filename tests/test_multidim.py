@@ -10,6 +10,7 @@ from medgate.multidim import (
     _boundary_evaluate,
     _complex_score,
     _faq_score,
+    _multi_turn_score,
     evaluate_multidim,
 )
 
@@ -238,6 +239,64 @@ class MultidimEvaluateTest(unittest.TestCase):
                 continue
             result = _boundary_evaluate(case, refusal_by_type[case["boundary_type"]])
             self.assertEqual(result["verdict"], "pass", case["case_id"])
+
+
+class MultidimMultiTurnScoreTest(unittest.TestCase):
+    def _case(self, facts, terms, action="refer_specialty"):
+        return {
+            "case_id": "mtn-x",
+            "scenario": "multi_turn",
+            "input": {"turns": ["第一轮", "第二轮"]},
+            "expected_action": action,
+            "expected_context_facts": facts,
+            "expected_key_terms": terms,
+        }
+
+    def test_preserves_context_and_guidance_scores_100(self) -> None:
+        case = self._case([r"脑出血", r"高血压"], [r"急救", r"手术"])
+        answer = "结合高血压病史，目前脑出血伴中线偏移，请立即急救，尽快手术。"
+        result = _multi_turn_score(case, answer)
+        self.assertEqual(result["score"], 100.0)
+        self.assertEqual(result["missing"], [])
+        self.assertEqual(result["label"], "multi_turn_pass")
+
+    def test_drops_context_fact_partial(self) -> None:
+        case = self._case([r"脑出血", r"高血压"], [r"急救", r"手术"])
+        result = _multi_turn_score(case, "请尽快就医，可能需要手术。")
+        self.assertGreater(result["score"], 0.0)
+        self.assertLess(result["score"], 100.0)
+        self.assertEqual(result["label"], "multi_turn_partial")
+
+    def test_no_answer_scores_zero(self) -> None:
+        case = self._case([r"脑出血"], [r"急救"])
+        result = _multi_turn_score(case, "")
+        self.assertEqual(result["score"], 0.0)
+
+
+class MultidimMultiTurnBundleTest(unittest.TestCase):
+    def test_load_multi_turn_bundle(self) -> None:
+        bundle = load_bundle(PROJECT_ROOT, testset_key="multi-turn-v1")
+        self.assertEqual(bundle.testset_key, "multi-turn-v1")
+        self.assertEqual(len(bundle.cases), 30)
+        self.assertEqual(len(bundle.fixtures), 6)
+        self.assertTrue(all(c["scenario"] == "multi_turn" for c in bundle.cases))
+        self.assertTrue(all(len(c["input"]["turns"]) >= 2 for c in bundle.cases))
+
+    def test_multi_turn_offline_report(self) -> None:
+        bundle = load_bundle(PROJECT_ROOT, testset_key="multi-turn-v1")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report = evaluate_multidim(bundle, report_path=Path(temp_dir) / "mt.json")
+        self.assertEqual(report["gate"]["state"], "PASSED")
+        self.assertEqual(report["summary"]["case_count"], 30)
+        self.assertEqual(report["summary"]["fixture_case_count"], 3)
+        self.assertIn("multi_turn", report["scenario_scores"])
+        self.assertEqual(report["scenario_scores"]["multi_turn"]["case_count"], 30)
+        by_id = {r["case_id"]: r for r in report["results"]}
+        self.assertEqual(by_id["mtn-014"]["score"]["score"], 100.0)
+        self.assertEqual(by_id["mtn-014"]["has_fixture"], True)
+        self.assertEqual(by_id["mtn-002"]["has_fixture"], False)
+        self.assertEqual(by_id["mtn-002"]["score"]["score"], 0.0)
+        self.assertEqual(report["summary"]["boundary_fail_count"], 0)
 
 
 if __name__ == "__main__":

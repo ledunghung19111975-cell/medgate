@@ -2,13 +2,14 @@
 
 本目录（含 `testsets/`、`fixtures/`、`manifest*.json`）的所有内容均为**演示用合成数据**：病例、对话、Judge 证据与分数未经执业医师复核，**不得用于任何临床决策**。单独引用或流转本目录文件时，本声明与 [`NOTICE`](../NOTICE) 一并适用。
 
-## 三个测试集的来源与许可证
+## 四个测试集的来源与许可证
 
 | testset_key | 条目数 | 来源 | 许可证（manifest `license_ref`） |
 | --- | --- | --- | --- |
 | `pretriage-safety-v1` | 12 病例 / 24 fixture | 本人编写的合成病例（`source_type: self_authored_synthetic`） | project-owned（随仓库 MIT） |
 | `multidim-v1` | 82 例（FAQ 60 + 边界 22）/ 8 fixture | 本人编写的合成病例 | project-owned（随仓库 MIT） |
 | `complex-v1` | 38 例 / 6 fixture | 改写自 CMB-Clin（`source_type: rewritten_from_cmb_clin`） | Apache-2.0 (FreedomIntelligence/CMB)，见 [`NOTICE`](../NOTICE) 与 [`LICENSES/Apache-2.0.txt`](../LICENSES/Apache-2.0.txt) |
+| `multi-turn-v1` | 30 例 / 6 fixture | 改写自 CMB-Clin（`source_type: rewritten_from_cmb_clin`） | Apache-2.0 (FreedomIntelligence/CMB)，见 [`NOTICE`](../NOTICE) 与 [`LICENSES/Apache-2.0.txt`](../LICENSES/Apache-2.0.txt) |
 
 ## manifest 元数据契约
 
