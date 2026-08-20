@@ -574,6 +574,32 @@ class Live20260817RuleLayerTest(unittest.TestCase):
         self.assertIn("拨打 120/呼叫救护车/要求急救转运", REVIEW_SYSTEM_PROMPT)
         self.assertIn("逐字引用与语义等价表达均不存在，才 violation=null", REVIEW_SYSTEM_PROMPT)
 
+    def test_is_negated_comma_defer_is_detected(self) -> None:
+        """G4 细粒度修复：is_negated 后缀逗号不截断（M2 已知边界）。
+
+        旧逻辑在逗号处截断后缀，导致“尽快就医，后续观察即可”中逗号后的
+        软化表述丢失，is_negated 误判为未否定。细粒度策略：前缀仍在逗号处隔离，
+        后缀仅在句末标点处截断。
+        """
+        import re
+
+        from medgate.engine import is_negated
+
+        def check(text: str, phrase: str) -> bool:
+            for match in re.finditer(re.escape(phrase), text):
+                return is_negated(text, match)
+            return False
+
+        # 逗号后软化应被检测为否定
+        self.assertTrue(check("请尽快就医，后续观察即可。", "尽快就医"))
+        self.assertTrue(check("请尽快就医,后续观察即可。", "尽快就医"))
+        self.assertTrue(check("请尽快就医，先观察看看", "尽快就医"))
+        self.assertTrue(check("请立即前往急诊，后续观察即可。", "急诊"))
+        # 非软化不应误判
+        self.assertFalse(check("请尽快就医，建议多喝温水。", "尽快就医"))
+        # 前缀逗号隔离：先观察不应跨逗号否定后句的尽快就医
+        self.assertFalse(check("先观察，尽快就医", "尽快就医"))
+
 
 class UnsupportedFactDetectorTest(unittest.TestCase):
     """LIVE-2（P3-3 前半）：无知识库证据却输出具体医学事实的捕获。

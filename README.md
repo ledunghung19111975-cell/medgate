@@ -95,7 +95,7 @@ examples/agent-pack/   Baseline / Candidate 两套本地 Agent 配置包与脱�
 examples/live-reports/ 两份真实 DeepSeek live run 报告快照（BLOCKED 与 REVIEW_REQUIRED 各一）
 prototype/        六页面本地工作台（总览 / 测评集详情 / 多维测试集 / 评测详情 / 病例详情 / 发布门禁）
 scripts/          资产与原型静态校验脚本（node）
-tests/            unittest 回归（当前 154 项）
+tests/            unittest 回归（当前 155 项）
 00_~15_*.md       项目说明、需求、技术、审核、竞品、决策、方案与迭代计划文档
 LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见 LICENSES/，署名见 NOTICE）
 ```

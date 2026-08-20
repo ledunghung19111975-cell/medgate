@@ -1,5 +1,12 @@
 # MedGate 开发进度
 
+## G4 is_negated 逗号截断细粒度修复（2026-08-20，细粒度重评）
+
+- [x] **根因**：`medgate/engine.py::is_negated` 后缀在逗号处截断，导致“尽快就医，后续观察即可”中逗号后的软化证据（`观察即可`/`先观察`/`在家观察`）丢失，M2 规则层误判为未否定；M3.1 的 `_match_escalation_phrases` 已用跨句 veto 兜住，M2 沿用旧行为至此（见下方 M3.1 已知边界）。
+- [x] **细粒度修复**：`is_negated` 后缀仅在句末标点（`。！？；;` 与换行）处截断，保留逗号后 16 字符窗口内的软化证据；前缀仍在逗号处隔离（`先观察，尽快就医`不跨逗号否定）。源码 `engine.py:250-275`，`rule_hash` 由 `e2c59970…fdb4` → `8b71e249…a3817f`，`run_input_hash` 同步更新。
+- [x] **回归与验证**：`assets/reviews/demo-confirmed-p0.json` 的 `rule_hash`/`run_input_hash` 已重签（`4477fa64…fc7740`）；`test_engine.py::test_is_negated_comma_defer_is_detected` 新增 6 断言（逗号后软化应否定、非软化不误判、前缀逗号隔离）；全量 `155/155`（新增 1 项）通过，`medgate validate` 四 testset ok，离线回放 pretriage `1 BLOCKED` / multidim `2 REVIEW_REQUIRED` 零回归，`node` 四脚本 ok；`test_live_first_keeps_static_finding_identity_and_demo_review_pack_replays` 的 `422` 回归已随重签修复。
+- [ ] **未覆盖**：真实 DeepSeek live 路径未跑（红线）；5 项已知限制见 `BLOCKED.md`。
+
 ## 2026-08-20 全量审核修复与方案回填（本轮执行）
 
 - [x] **审核**：双只读对抗审查 Agent + 主 Agent 亲跑实证，结论「有条件通过」（P0×1 / P1×8 / P2×13），报告 `15_审核报告_20260820.md`。修复范围与验证：
@@ -162,7 +169,7 @@
 - [x] 原始 step 写入失败审计：`api.py` 新增 `_StepPersistenceError`，`persist_setup_failure(original_step_failure=True)` 如实标记 `step_persistence_incomplete`，不再被 provisional 落库成功掩盖。
 - [x] 陪同行动标点一致性：逗号/句号拆分陪同句式（陪同前往/陪同，前往/陪同。前往）语义一致，均为升级。
 - [x] 对抗语料：三轮自审 + 一轮受限前台独立复核，累计 120+ 中文医疗语境用例（无条件升级 40+、失败关闭 70+、陪同标点变体 7+）全部通过；独立复核构造的 8 个失败关闭缺口（仅供参考/自行定夺/…的话/…情况下/也不迟/不过呢/拿主意/取决于/跨 48 字窗口软化）已修复并固化回归。复核降级记录：两路后台只读复核超时未返回（项目历史同类先例），降级为受限前台独立复核（1 路，返回 25 例结论）+ 主 Agent 三轮自审；该降级符合 `00_工作台/SOP/跨Agent审核执行复验闭环.md` 的降级条款，独立复核发现的问题已全数闭环，未遗留未处理的 P0/P1。
-- [ ] 已知边界：`is_negated`（engine.py，M2 规则引擎共用）对短语后紧跟逗号的否定句存在截断（"尽快就医，后续观察即可"类），M3.1 匹配器已自行兜住，M2 沿用旧行为，M3.2 再评估；真实 DeepSeek v2 外部 smoke 仍需用户在本机确认外发后执行。
+- [x] 已修复（G4）：`is_negated`（engine.py，M2 规则引擎共用）对短语后紧跟逗号的软化截断已修复（细粒度：后缀逗号不截断，前缀仍隔离），“尽快就医，后续观察即可”类现正确判否定；M3.1 匹配器此前已兜住；真实 DeepSeek v2 外部 smoke 仍需用户在本机确认外发后执行。
 
 ## 未覆盖项
 
