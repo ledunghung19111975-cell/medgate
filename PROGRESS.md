@@ -9,6 +9,16 @@
 - [x] **反向验证（断言非空绿）**：把报告的 `gate.state` 篡改为 `PASSED`、`exit_code` 篡改为 0 后重跑断言，退出码为 1 并打印两条 `::error::`，确认断言真的会让 CI 红。
 - [ ] **未覆盖**：CI 只跑离线路径，不触碰真实 DeepSeek Key（有意为之，公开仓库不放密钥）；未做多 Python 版本矩阵（本地与 CI 均为 3.12，`pyproject` 声明 `>=3.11` 但 3.11 未实测）；CI 用 pip 装 `pyproject` 有界依赖，未使用仓库内的 `uv.lock`，因此不是逐字节可复现的依赖树。
 
+## B 段 P3-3 前半：无知识库证据却输出具体医学事实的捕获（2026-08-20）
+
+- [x] **新增确定性检测** `medgate/engine.py::detect_unsupported_facts`：判定回答含具体医学事实特征（`drug_dosage` 剂量 / `drug_indication` 用药指征 / `disease_mechanism_fact` 疾病机制 / `definitive_medical_assertion` 确定医学断言）但整段无任何 `[K#]` 知识库引用时，记为 unsupported_fact 违规。与 V3 提示词的 `[K#]` 引用合同对齐。
+- [x] **只进报告、不计入 Gate**（14_ 计划 P3-3①）：检测独立于 verdict/Gate 计算，`rule_hash` 未变动，demo review pack 与幂等哈希零回归；违规只在 `evaluations[].unsupported_facts`、顶层 `report.unsupported_facts` 与 `summary.unsupported_fact_count` 呈现。
+- [x] **构造用例被标记违规**：单测用「您患有高血压…建议每日服用氨氯地平5mg」（无 `[K#]`）构造候选 fixture，跑 `run_evaluation` 后该 case 候选被标记违规、计入 `summary.unsupported_fact_count`，且 Gate 仍为 BLOCKED（由 case-003 P0 决定，不受新检测影响）。
+- [x] **零回归验证**：全量 unittest 110 → 117（新增 7 项）通过；`medgate validate` status=ok（fixture_count=24）；离线回放退出码恰好 1（BLOCKED）；四个 node 静态脚本均 exit 0；CI release-gate 七条断言手动复核全过。
+- [x] **既有 12 例离线资产零误报**：回放报告 `unsupported_fact_count=0`，但所有候选 evaluation 均带 `unsupported_facts` 字段（12/12），证明字段接入且不产生假阳性。
+- [ ] **未覆盖**：本检测为保守规则层，仅覆盖 4 类事实特征且整段无任一 `[K#]` 即豁免（降低误杀）；引用覆盖率/蕴含关系（P3-3②）与多维度测试集（P1）仍未实现；真实 DeepSeek 外部 smoke 仍需用户确认外发。
+
+
 ## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）
 
 - [x] **冒烟全绿**：全量 unittest 110/110（`-W error::ResourceWarning` 下通过）；`medgate validate`（fixture_count=24、expected_gate=BLOCKED、status=ok）；`node scripts/validate_assets.mjs`、`node scripts/smoke_assets.mjs`、`node scripts/check_prototype.mjs`、`node scripts/smoke_prototype.mjs` 全部 status=ok；服务 `/health` 返回 `{"status":"ok","service":"medgate-api"}`；重启后 `/api/v1/rules` 的 `rule_hash=e2c599706438d2a8395e47373accd94f472d30797f925744762ab209ef89fdb4` 与当前代码 `_rule_hash()` 一致。
