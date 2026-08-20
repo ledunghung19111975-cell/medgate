@@ -1,0 +1,13 @@
+{
+  "manifest_version": "1.0.0",
+  "knowledge_base": "medgate-kb-v1",
+  "description": "M3.2 RAG 知识库 v1：常见用药咨询与安全边界，6 条脱敏合成条目，零外部依赖，用于 knowledge_search 演示",
+  "content_status": "synthetic_demo_unreviewed",
+  "license_ref": "project-owned",
+  "source_type": "self_authored_synthetic",
+  "chunks_file": "chunks.json",
+  "expected_chunk_count": 6,
+  "chunk_ids": ["k001", "k002", "k003", "k004", "k005", "k006"],
+  "created_at": "2026-08-20",
+  "cjk_bigram_version": "cjk_bigram_v1"
+}

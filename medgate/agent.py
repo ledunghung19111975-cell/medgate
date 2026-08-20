@@ -16,6 +16,7 @@ from typing import Any, Callable
 from .db import SCHEMA, connect
 from .deepseek import DEEPSEEK_MODEL, DEEPSEEK_TEMPERATURE, DEEPSEEK_THINKING, ChatClient
 from .engine import NEGATION_TOKENS, POST_NEGATION_TOKENS, canonical_hash, is_negated, utc_now
+from .rag import knowledge_search as rag_knowledge_search
 
 
 AGENT_SNAPSHOT_VERSION = "agent-package-snapshot-v1"
@@ -462,8 +463,11 @@ def _validate_testset(value: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]
         _relative_parts(target_skill)
         if not target_skill.endswith(".md"):
             raise AgentAssetError("target_skill 必须引用 Markdown Skill")
-        if case.get("allowed_tools") not in ([], None):
-            raise AgentAssetError("M3.1 纯文本 Skill 用例不得声明 Tool")
+        allowed_tools = case.get("allowed_tools")
+        if allowed_tools not in ([], None):
+            # M3.2: 允许 knowledge_search 作为预检索 RAG, 其他 Tool 仍按 M3.1 禁止
+            if allowed_tools != ["knowledge_search"]:
+                raise AgentAssetError("M3.1 纯文本 Skill 用例不得声明 Tool")
         turns = ((case.get("input") or {}).get("turns") if isinstance(case.get("input"), dict) else None)
         if not isinstance(turns, list) or not turns or any(not isinstance(turn, str) or not turn.strip() for turn in turns):
             raise AgentAssetError(f"用例必须包含非空 input.turns：{case_id}")
@@ -483,7 +487,7 @@ def _validate_testset(value: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]
             raise AgentAssetError(f"priority 非法：{case_id}")
         case["case_id"] = case_id
         case["target_skill"] = target_skill
-        case["allowed_tools"] = []
+        case["allowed_tools"] = list(allowed_tools) if isinstance(allowed_tools, list) else []
         case["priority"] = priority
         seen.add(case_id)
         validated.append(case)
@@ -1414,6 +1418,21 @@ class AgentLoop:
                             failure = {"code": "RUN_BUDGET_EXCEEDED", "message": "已达到模型调用硬上限，已停止后续外调"}
                             break
                         messages.append({"role": "user", "content": str(turn)})
+                        # M3.2 RAG pre-retrieval: 知识库检索并注入上下文, 真实发生且进 trace
+                        if "knowledge_search" in (case.get("allowed_tools") or []):
+                            try:
+                                hits = rag_knowledge_search(str(turn), top_k=3)
+                                if hits:
+                                    kb_lines = []
+                                    for idx, h in enumerate(hits, start=1):
+                                        kb_lines.append(f"[K{idx}] {h['title']}: {h['text']} (来源: {h['source_id']}/{h['chunk_id']})")
+                                    kb_block = "检索到的知识库参考信息(回答时请按需引用, 格式 [K#]):\n" + "\n".join(kb_lines)
+                                    messages.append({"role": "system", "content": kb_block})
+                                    emit({"type": "knowledge_retrieved", "repeat_no": repeat_no, "role": role, "case_id": case_id, "turn_no": turn_no, "query": str(turn), "hits": hits})
+                                else:
+                                    emit({"type": "knowledge_retrieved", "repeat_no": repeat_no, "role": role, "case_id": case_id, "turn_no": turn_no, "query": str(turn), "hits": []})
+                            except Exception as exc:  # noqa: BLE001 - retrieval failure must not break run
+                                emit({"type": "knowledge_retrieve_failed", "repeat_no": repeat_no, "role": role, "case_id": case_id, "turn_no": turn_no, "error": str(exc)})
                         estimated_input_tokens = sum(_estimate_message_tokens(message["content"]) for message in messages)
                         if estimated_input_tokens > AGENT_MAX_INPUT_TOKENS:
                             failure = {"code": "INPUT_BUDGET_EXCEEDED", "message": "本次模型输入超过 16,000 token 硬上限，已停止外调"}

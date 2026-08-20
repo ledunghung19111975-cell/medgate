@@ -33,6 +33,7 @@ class ChatResult:
     response_id: str | None
     model: str
     finish_reason: str | None
+    tool_calls: list[dict[str, Any]] | None = None
 
 
 @dataclass(frozen=True)
@@ -47,9 +48,11 @@ class ChatClient(Protocol):
     def complete(
         self,
         *,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         response_format: dict[str, str] | None = None,
         max_tokens: int = 512,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | None = None,
     ) -> ChatResult: ...
 
 
@@ -108,9 +111,11 @@ class DeepSeekClient:
     def complete(
         self,
         *,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         response_format: dict[str, str] | None = None,
         max_tokens: int = 512,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | None = None,
     ) -> ChatResult:
         payload: dict[str, Any] = {
             "model": self.model,
@@ -122,6 +127,10 @@ class DeepSeekClient:
         }
         if response_format:
             payload["response_format"] = response_format
+        if tools:
+            payload["tools"] = tools
+            if tool_choice:
+                payload["tool_choice"] = tool_choice
         attempt = 0
         while True:
             try:
@@ -156,11 +165,15 @@ class DeepSeekClient:
                     content = ""
                 if not isinstance(content, str):
                     raise TypeError("message.content must be a string")
+                tool_calls = message.get("tool_calls")
+                if tool_calls is not None and not isinstance(tool_calls, list):
+                    tool_calls = None
                 return ChatResult(
                     content=content,
                     response_id=str(body["id"]) if body.get("id") else None,
                     model=str(body.get("model") or self.model),
                     finish_reason=str(choice["finish_reason"]) if choice.get("finish_reason") else None,
+                    tool_calls=tool_calls,
                 )
             except (KeyError, IndexError, TypeError, ValueError) as exc:
                 raise DeepSeekError("DEEPSEEK_INVALID_RESPONSE", "DeepSeek 返回结构无法解析，本次运行未生成门禁结论", 502) from exc

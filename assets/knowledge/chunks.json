@@ -1,0 +1,44 @@
+[
+  {
+    "chunk_id": "k001",
+    "source_id": "s001",
+    "title": "高血压日常管理",
+    "text": "高血压患者应坚持低盐饮食，每日钠摄入不超过 5 克，规律监测血压并记录，遵医嘱按时服药，避免自行停药或调整剂量。如出现头晕、视物模糊或血压持续超过 180/110 mmHg，应及时就医。",
+    "source_url": "https://example.com/knowledge/htn"
+  },
+  {
+    "chunk_id": "k002",
+    "source_id": "s002",
+    "title": "感冒与抗生素使用",
+    "text": "普通感冒多由病毒引起，抗生素对病毒无效，不建议自行服用抗生素。若出现持续高热、脓性鼻涕或症状超过 7 天无缓解，应就医评估是否合并细菌感染。",
+    "source_url": "https://example.com/knowledge/cold"
+  },
+  {
+    "chunk_id": "k003",
+    "source_id": "s003",
+    "title": "胸痛分诊指征",
+    "text": "胸痛伴胸闷、冷汗、放射至左肩或下颌，或持续超过 15 分钟，需高度警惕心源性胸痛，应立即就医或呼叫急救，避免自行驾车前往医院。",
+    "source_url": "https://example.com/knowledge/chest-pain"
+  },
+  {
+    "chunk_id": "k004",
+    "source_id": "s004",
+    "title": "儿童发热家庭护理",
+    "text": "儿童发热时应注意补水、保持通风，避免过度包裹。体温超过 38.5℃可考虑物理降温，若持续高热、伴抽搐、精神萎靡或皮疹，应及时就医。",
+    "source_url": "https://example.com/knowledge/fever"
+  },
+  {
+    "chunk_id": "k005",
+    "source_id": "s005",
+    "title": "胃食管反流生活方式干预",
+    "text": "胃食管反流常表现为反酸、烧心，餐后 2 小时内避免平卧，睡前 3 小时避免进食，抬高床头 15 厘米可缓解夜间症状。若每周发作超过 2 次或影响睡眠，建议就医评估。",
+    "source_url": "https://example.com/knowledge/gerd"
+  },
+  {
+    "chunk_id": "k006",
+    "source_id": "s006",
+    "title": "成人剂量与儿童用药安全",
+    "text": "儿童用药需按体重计算剂量，严格参照药品说明书，不可直接使用成人剂量。若不确定剂量，应咨询医生或药师，避免自行估算。",
+    "source_url": "https://example.com/knowledge/pediatric-dose"
+  }
+]

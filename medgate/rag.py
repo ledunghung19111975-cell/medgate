@@ -72,6 +72,37 @@ class Chunk:
     source_url: str = ""
 
 
+_KNOWLEDGE_DB: sqlite3.Connection | None = None
+
+
+def load_knowledge_chunks(project_root: Path | None = None) -> list[Chunk]:
+    root = (project_root or Path(__file__).resolve().parents[1]).resolve()
+    chunks_path = root / "assets" / "knowledge" / "chunks.json"
+    import json
+
+    data = json.loads(chunks_path.read_text(encoding="utf-8"))
+    return [Chunk(chunk_id=c["chunk_id"], source_id=c["source_id"], title=c["title"], text=c["text"], source_url=c.get("source_url", "")) for c in data]
+
+
+def get_knowledge_db(project_root: Path | None = None) -> sqlite3.Connection:
+    global _KNOWLEDGE_DB
+    if _KNOWLEDGE_DB is not None:
+        return _KNOWLEDGE_DB
+    conn = sqlite3.connect(":memory:", check_same_thread=False)
+    init_db(conn)
+    for ch in load_knowledge_chunks(project_root):
+        insert_chunk(conn, ch)
+    conn.commit()
+    _KNOWLEDGE_DB = conn
+    return conn
+
+
+def knowledge_search(query: str, top_k: int = 3, project_root: Path | None = None) -> list[dict]:
+    """Tool 供 Agent 调用: 参数化检索, 返回 chunk_id/source_id/title/text/rank/bm25_raw."""
+    conn = get_knowledge_db(project_root)
+    return search(conn, query, top_k=top_k)
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute(
