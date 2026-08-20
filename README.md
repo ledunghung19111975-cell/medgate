@@ -29,7 +29,8 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 | P1-4 复杂疾病维 38 条（CMB-Clin Apache-2.0 改写，独立 `complex-v1`） | ✅ 离线可复现（3 例关键 case 配 fixture，其余 live-only） |
 | GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 离线可复现（每次 push 实跑，见页首徽章） |
 | P1-5 多轮维 30 条（CMB-Clin 多轮 QA 改写，独立 `multi-turn-v1`） | ✅ 离线可复现（3 例关键 case 配 fixture，其余 live-only） |
-| M3.2 SQLite FTS5 中文 RAG（`knowledge_search`）、M3.3 推荐 Tool | 🚧 未开始 |
+| M3.2 SQLite FTS5 中文 RAG（`knowledge_search`） | ✅ 已验证（`cjk_bigram_v1` + 6 条知识库，检索进 trace） |
+| M3.3 推荐 Tool（`recommend_services`） | 🚧 未开始 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
 | 公开静态部署 | ❌ 已取消（2026-08-20 用户裁决：使用方式为本地下载运行） |
 
@@ -65,6 +66,8 @@ python3 -m medgate run \
 python3 -m medgate run --test-set multidim-v1 --report artifacts/multidim-gate.json
 # 复杂疾病维（3 例 fixture 满分、35 例 live-only 出 0 分）→ 预期退出码 0
 python3 -m medgate run --test-set complex-v1 --report artifacts/complex-gate.json
+# 多轮对话维（3 例 fixture 满分、27 例 live-only 出 0 分）→ 预期退出码 0
+python3 -m medgate run --test-set multi-turn-v1 --report artifacts/multi-turn-gate.json
 
 # 运行测试
 python3 -m unittest discover -s tests -v
@@ -90,9 +93,9 @@ medgate/          Python 包：离线评测引擎、CLI、SQLite、DeepSeek 客�
 assets/           版本化测试集（12 例）、24 份双版本 fixture、agents.yaml、manifest（数据边界见 assets/README.md）
 examples/agent-pack/   Baseline / Candidate 两套本地 Agent 配置包与脱敏回归测试集
 examples/live-reports/ 两份真实 DeepSeek live run 报告快照（BLOCKED 与 REVIEW_REQUIRED 各一）
-prototype/        五页面本地工作台（总览 / 测评集详情 / 评测详情 / 病例详情 / 发布门禁）
+prototype/        六页面本地工作台（总览 / 测评集详情 / 多维测试集 / 评测详情 / 病例详情 / 发布门禁）
 scripts/          资产与原型静态校验脚本（node）
-tests/            unittest 回归（当前 145 项）
+tests/            unittest 回归（当前 154 项）
 00_~15_*.md       项目说明、需求、技术、审核、竞品、决策、方案与迭代计划文档
 LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见 LICENSES/，署名见 NOTICE）
 ```
@@ -101,7 +104,7 @@ LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见
 
 ## 安全与数据边界
 
-- **数据**：FAQ/边界/主测试集为本人编写的合成病例（`source_type = self_authored_synthetic`），不包含真实患者数据；复杂疾病维（`complex-v1`）改写自 CMB-Clin 开源病例（Apache-2.0，见 [NOTICE](./NOTICE)）。全部内容未经执业医师复核。
+- **数据**：FAQ/边界/主测试集为本人编写的合成病例（`source_type = self_authored_synthetic`），不包含真实患者数据；复杂疾病维（`complex-v1`）与多轮维（`multi-turn-v1`）改写自 CMB-Clin 开源病例（Apache-2.0，见 [NOTICE](./NOTICE)）。全部内容未经执业医师复核。
 - **密钥**：真实评测的 `DEEPSEEK_API_KEY` 只从页面内存或本机环境变量读取，不写入页面、请求体、快照、报告或仓库；`medgate/deepseek.py` 只读 `os.environ`。
 - **门禁语义**：`P0` 失败独立决定 `BLOCKED`，不因平均分、阈值或普通备注稀释；条件句、软化句、推迟句、跨分句条件等歧义表达按**失败关闭**处理，不构成无条件升级。
 - **回放隔离**：离线 Runner / CLI / fixture 回放不调用外部模型、不读 Key；真实 live run 结果不写入前端默认数据源，刷新回到干净空状态。
@@ -111,17 +114,17 @@ LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见
 ## 尚未实现（非缺陷，属后续里程碑）
 
 - live 路径的测试集参数化（`/api/v1/live-runs` 当前只支持 `pretriage-safety-v1`；P1-6 live 冒烟与 P2-1 大规模真实运行的前置）
-- SQLite FTS5 中文 RAG 与 `knowledge_search`、`recommend_services` 推荐 Tool（M3.2–M3.3）
-- 正式 repeated 回归、异步/SSE、公开脱敏报告导出
+- `recommend_services` 推荐 Tool（M3.3）与正式 repeated 回归、异步/SSE（M3.2 RAG 的 `cjk_bigram_v1` 预分词与 6 条知识库已验证，`knowledge_search` 预检索引入 trace，见 `medgate/rag.py` 与 `assets/knowledge/`）
+- 公开脱敏导出
 - 公开静态部署（已取消，2026-08-20 用户裁决；CI 见页首徽章）
-- 真实运行的精确 token / 费用核算（本地客户端未持久化上游 `usage`，P5-3）
+- 真实运行的精确 token / 费用报告核算与 DB 落盘完善（`usage` 已可在 `Trace` 透传，见 `medgate/deepseek.py` / `medgate/agent.py`，P5-3）
 - 病例的执业医师复核
 
 ---
 
 ## 许可证
 
-本仓库以 [MIT](./LICENSE) 发布。复杂疾病维（`complex-v1`）改写自 [FreedomIntelligence/CMB](https://github.com/FreedomIntelligence/CMB) 的 CMB-Clin 病例（Apache-2.0，许可证副本见 [`LICENSES/Apache-2.0.txt`](./LICENSES/Apache-2.0.txt)，署名与改写说明见 [NOTICE](./NOTICE)）。各测试集的来源与许可证元数据见 [`assets/README.md`](./assets/README.md)。
+本仓库以 [MIT](./LICENSE) 发布。复杂疾病维（`complex-v1`）与多轮维（`multi-turn-v1`）改写自 [FreedomIntelligence/CMB](https://github.com/FreedomIntelligence/CMB) 的 CMB-Clin 病例（Apache-2.0，许可证副本见 [`LICENSES/Apache-2.0.txt`](./LICENSES/Apache-2.0.txt)，署名与改写说明见 [NOTICE](./NOTICE)）。各测试集的来源与许可证元数据见 [`assets/README.md`](./assets/README.md)。
 
 ---
 
@@ -129,7 +132,7 @@ LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见
 
 候选底座（Medmarks、CRAFT-MD、Phlox、PhysicianBench、TrialGPT 等）的许可调研记录在 [`05_关键决策记录.md`](./05_关键决策记录.md)；本仓库**未复制或集成**任何第三方代码/数据，仅以合成演示资产实现评测门禁流程。
 
-复杂疾病维（`complex-v1`，38 条）依据 [FreedomIntelligence/CMB](https://github.com/FreedomIntelligence/CMB) 的 CMB-Clin 病例改写（Apache-2.0），改写后的病例与期望回答均为演示用合成内容，**未经执业医师复核，不得用于任何临床决策**；CMB 引用：Wang, Xidong et al., "CMB: A Comprehensive Medical Benchmark in Chinese", arXiv:2308.08833。
+复杂疾病维（`complex-v1`，38 条）与多轮维（`multi-turn-v1`，30 条）依据 [FreedomIntelligence/CMB](https://github.com/FreedomIntelligence/CMB) 的 CMB-Clin 病例改写（Apache-2.0），改写后的病例与期望回答均为演示用合成内容，**未经执业医师复核，不得用于任何临床决策**；CMB 引用：Wang, Xidong et al., "CMB: A Comprehensive Medical Benchmark in Chinese", arXiv:2308.08833。
 
 ---
 
