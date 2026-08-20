@@ -8,7 +8,7 @@
 
 ## 一、开工前只读这四份（约 5 万字符）
 
-仓库有 18 份 markdown 共约 30 万字符，**不要通读**。按顺序读这四份就够开工：
+仓库有 19 份 markdown 共约 30 万字符，**不要通读**。按顺序读这四份就够开工：
 
 | 顺序 | 文件 | 读它拿什么 |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ python3 00_工作台/scripts/context-bootstrap.py MedGate
 # 依赖（本地事实源是 uv.lock；CI 用 pip 装 pyproject 的有界依赖）
 python3 -m venv .venv && ./.venv/bin/pip install -e .
 
-# 单元测试：当前 110 项，ResourceWarning 视为错误
+# 单元测试：当前 140 项，ResourceWarning 视为错误
 ./.venv/bin/python -B -W error::ResourceWarning -m unittest discover -s tests
 
 # 资产与 manifest 校验（应 status=ok、fixture_count=24）
@@ -60,6 +60,10 @@ python3 -m venv .venv && ./.venv/bin/pip install -e .
 
 # 离线回放：无外连、无密钥，退出码应恰好为 1（BLOCKED）
 ./.venv/bin/python -m medgate run --db artifacts/local.sqlite3 --report artifacts/gate.json --idempotency-key dev-1
+
+# 多维度测试集离线评估：multidim-v1 因 21 个边界 case 未评估退出码应恰好为 2（REVIEW_REQUIRED）；
+# complex-v1 退出码 0（PASSED）——未评估 ≠ 通过，见 14_ P1-6 与 multidim.py 头注
+./.venv/bin/python -m medgate run --test-set multidim-v1 --report artifacts/md-gate.json
 
 # 资产与原型静态检查（只用 node 内置模块，无 npm 依赖）
 node scripts/validate_assets.mjs && node scripts/smoke_assets.mjs

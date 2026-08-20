@@ -12,24 +12,28 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 
 ## 当前状态
 
+状态标注分三级：**离线可复现**（clone 后即可用命令验证）／**本机已验**（仅作者本机有证据，快照见 `examples/live-reports/`）／**待真实冒烟**（需用户 Key 外发）。
+
 | 阶段 | 状态 |
 | --- | --- |
-| M1 五页面本地原型（`prototype/index.html`） | ✅ 完成 |
-| T0 版本化资产（12 病例、24 份双版本 fixture、manifest 校验） | ✅ 完成 |
-| M2 离线评测 Runner / CLI / SQLite（无外连、无密钥） | ✅ 完成 |
-| 本地 FastAPI + 手动提示词 live run（`deepseek-v4-flash`） | ✅ 完成 |
-| 提示词资产 V1→V2→V3 单变量迭代闭环（真实重跑验收，12/12 无回归） | ✅ 完成 |
-| M3.1 Agent 配置包 + 纯文本 Skill 循环评测（`synchronous-local-demo` v2 API） | ✅ 完成 |
-| 病例级并发执行 + 429 退避重试 + 预算失败关闭（v2 live） | ✅ 完成 |
-| M3.2 SQLite FTS5 中文 RAG（`knowledge_search`） | 🚧 未开始 |
-| M3.3 推荐 Tool（`recommend_services`） | 🚧 未开始 |
-| P1-1 多维度 schema + 独立 `multidim-v1` 评估路径 | ✅ 完成 |
-| P1-2 FAQ 维 60 条（自建） | ✅ 完成（3 例关键 case 配 fixture，其余 live-only） |
-| P1-3 边界维 22 条（自建，NOHARM 实看后判定不适用撤下） | ✅ 完成（4 类边界类型，bnd-013 配 fixture） |
-| P1-4 复杂疾病维 38 条（CMB-Clin Apache-2.0 改写，独立 `complex-v1`） | ✅ 完成（3 例关键 case 配 fixture，其余 live-only） |
-| GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 完成 |
+| M1 五页面本地原型（`prototype/index.html`） | ✅ 离线可复现 |
+| T0 版本化资产（12 病例、24 份双版本 fixture、manifest 校验） | ✅ 离线可复现 |
+| M2 离线评测 Runner / CLI / SQLite（无外连、无密钥） | ✅ 离线可复现 |
+| 本地 FastAPI + 手动提示词 live run（`deepseek-v4-flash`） | ✅ 本机已验（Fake Client 链路离线可复现） |
+| 提示词资产 V1→V2→V3 单变量迭代闭环（真实重跑验收，12/12 无回归） | ✅ 本机已验（[报告快照](./examples/live-reports/) 已入库） |
+| M3.1 Agent 配置包 + 纯文本 Skill 循环评测（`synchronous-local-demo` v2 API） | ✅ 本机已验（Fake Client 验收；真实 v2 smoke 待用户 Key，P3-0） |
+| 病例级并发执行 + 429 退避重试 + 预算失败关闭（v2 live） | ✅ 本机已验（真实性能验收待 P2-1） |
+| P1-1 多维度 schema + 独立 `multidim-v1` 评估路径 | ✅ 离线可复现 |
+| P1-2 FAQ 维 60 条（自建） | ✅ 离线可复现（3 例关键 case 配 fixture，其余 live-only） |
+| P1-3 边界维 22 条（自建，NOHARM 实看后判定不适用撤下） | ✅ 离线可复现（bnd-013 配 fixture；21 例 live-only 未评估 → 整体 `REVIEW_REQUIRED`，见下） |
+| P1-4 复杂疾病维 38 条（CMB-Clin Apache-2.0 改写，独立 `complex-v1`） | ✅ 离线可复现（3 例关键 case 配 fixture，其余 live-only） |
+| GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 离线可复现（每次 push 实跑，见页首徽章） |
+| P1-5 多轮维 30 条 | 🚧 未开始（live 路径接入 multidim/complex 为 P1-6/P2-1 前置） |
+| M3.2 SQLite FTS5 中文 RAG（`knowledge_search`）、M3.3 推荐 Tool | 🚧 未开始 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
-| 公开静态部署 | 🚧 未开始 |
+| 公开静态部署 | ❌ 已取消（2026-08-20 用户裁决：使用方式为本地下载运行） |
+
+**multidim 覆盖语义（2026-08-20 起）**：边界层是唯一硬门禁（零容忍），其完整性前提是全部 boundary case 已评估——`medgate run --test-set multidim-v1` 在 21 个 live-only 边界 case 未评估时输出 `REVIEW_REQUIRED`（`BOUNDARY_NOT_EVALUATED`，退出码 2）而非 `PASSED`（**未评估 ≠ 通过**）；live 冒烟补齐回答后回到 `PASSED`。
 
 本仓库的 v2 执行路径明确标注为 `synchronous-local-demo`：无身份认证、同步串行执行的本地 Demo API，**不等同于生产审批服务**。
 
@@ -45,6 +49,8 @@ uv sync                          # 或：python3 -m pip install -e .
 
 # 校验版本化资产（12 病例 / 24 fixture / manifest 哈希）
 python3 -m medgate validate
+python3 -m medgate validate --test-set multidim-v1   # 82 例（FAQ 60 + 边界 22）
+python3 -m medgate validate --test-set complex-v1    # 38 例（CMB-Clin 改写）
 node scripts/validate_assets.mjs
 node scripts/smoke_assets.mjs
 
@@ -54,6 +60,11 @@ python3 -m medgate run \
   --db artifacts/medgate.sqlite3 \
   --report artifacts/gate.json
 # 预置候选版含 case-003 P0 回退，预期退出码 1、Gate=BLOCKED
+
+# 多维度测试集离线评估（21 个 live-only 边界 case 未评估 → 预期退出码 2）
+python3 -m medgate run --test-set multidim-v1 --report artifacts/multidim-gate.json
+# 复杂疾病维（3 例 fixture 满分、35 例 live-only 出 0 分）→ 预期退出码 0
+python3 -m medgate run --test-set complex-v1 --report artifacts/complex-gate.json
 
 # 运行测试
 python3 -m unittest discover -s tests -v
@@ -76,12 +87,14 @@ python3 -m http.server 18181   # 然后打开 http://127.0.0.1:18181/prototype/
 
 ```
 medgate/          Python 包：离线评测引擎、CLI、SQLite、DeepSeek 客户端、Agent 包评测、FastAPI
-assets/           版本化测试集（12 例）、24 份双版本 fixture、agents.yaml、manifest
+assets/           版本化测试集（12 例）、24 份双版本 fixture、agents.yaml、manifest（数据边界见 assets/README.md）
 examples/agent-pack/   Baseline / Candidate 两套本地 Agent 配置包与脱敏回归测试集
+examples/live-reports/ 两份真实 DeepSeek live run 报告快照（BLOCKED 与 REVIEW_REQUIRED 各一）
 prototype/        五页面本地工作台（总览 / 测评集详情 / 评测详情 / 病例详情 / 发布门禁）
 scripts/          资产与原型静态校验脚本（node）
-tests/            unittest 回归（当前 134 项）
-00_~14_*.md       项目说明、需求、技术、审核、竞品、决策、方案与迭代计划文档
+tests/            unittest 回归（当前 140 项）
+00_~15_*.md       项目说明、需求、技术、审核、竞品、决策、方案与迭代计划文档
+LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见 LICENSES/，署名见 NOTICE）
 ```
 
 ---
@@ -97,11 +110,18 @@ tests/            unittest 回归（当前 134 项）
 
 ## 尚未实现（非缺陷，属后续里程碑）
 
+- live 路径的测试集参数化（`/api/v1/live-runs` 当前只支持 `pretriage-safety-v1`；P1-6 live 冒烟与 P2-1 大规模真实运行的前置）
 - SQLite FTS5 中文 RAG 与 `knowledge_search`、`recommend_services` 推荐 Tool（M3.2–M3.3）
 - 正式 repeated 回归、异步/SSE、公开脱敏报告导出
-- 公开静态部署（CI 已完成，见页首徽章）
-- 真实运行的精确 token / 费用核算（本地客户端未持久化上游 `usage`）
+- 公开静态部署（已取消，2026-08-20 用户裁决；CI 见页首徽章）
+- 真实运行的精确 token / 费用核算（本地客户端未持久化上游 `usage`，P5-3）
 - 病例的执业医师复核
+
+---
+
+## 许可证
+
+本仓库以 [MIT](./LICENSE) 发布。复杂疾病维（`complex-v1`）改写自 [FreedomIntelligence/CMB](https://github.com/FreedomIntelligence/CMB) 的 CMB-Clin 病例（Apache-2.0，许可证副本见 [`LICENSES/Apache-2.0.txt`](./LICENSES/Apache-2.0.txt)，署名与改写说明见 [NOTICE](./NOTICE)）。各测试集的来源与许可证元数据见 [`assets/README.md`](./assets/README.md)。
 
 ---
 
