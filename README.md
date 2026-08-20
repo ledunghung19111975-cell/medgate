@@ -1,5 +1,7 @@
 # MedGate｜医疗 AI 评测与发布门禁
 
+[![CI](https://github.com/ledunghung19111975-cell/medgate/actions/workflows/ci.yml/badge.svg)](https://github.com/ledunghung19111975-cell/medgate/actions/workflows/ci.yml)
+
 > 让医疗 AI 的每次版本更新，在 P0 安全问题关闭前无法通过发布检查。
 
 MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批合成病例回放「基线版 / 候选版」两个 Agent 配置包，用**确定性规则 + 语义 Judge + 人工复核**三层证据计算门禁，任何候选版 P0 失败都会把结论锁为 `BLOCKED`，与平均分无关。
@@ -21,8 +23,9 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 | 病例级并发执行 + 429 退避重试 + 预算失败关闭（v2 live） | ✅ 完成 |
 | M3.2 SQLite FTS5 中文 RAG（`knowledge_search`） | 🚧 未开始 |
 | M3.3 推荐 Tool（`recommend_services`） | 🚧 未开始 |
+| GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 完成 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
-| GitHub Actions CI、公开部署 | 🚧 未开始 |
+| 公开静态部署 | 🚧 未开始 |
 
 本仓库的 v2 执行路径明确标注为 `synchronous-local-demo`：无身份认证、同步串行执行的本地 Demo API，**不等同于生产审批服务**。
 
@@ -92,7 +95,7 @@ tests/            unittest 回归（当前 110 项）
 
 - SQLite FTS5 中文 RAG 与 `knowledge_search`、`recommend_services` 推荐 Tool（M3.2–M3.3）
 - 正式 repeated 回归、异步/SSE、公开脱敏报告导出
-- GitHub Actions CI 与公开部署
+- 公开静态部署（CI 已完成，见页首徽章）
 - 真实运行的精确 token / 费用核算（本地客户端未持久化上游 `usage`）
 - 病例的执业医师复核
 

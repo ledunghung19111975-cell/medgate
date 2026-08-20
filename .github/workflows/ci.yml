@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  tests:
+    name: 单测与资产校验
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # 本地事实源是 uv.lock；CI 用 pip 装 pyproject 的有界依赖，
+      # 避免为一个纯离线项目引入额外的第三方 action。
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: 单元测试（ResourceWarning 视为错误）
+        run: python -B -W error::ResourceWarning -m unittest discover -s tests -v
+
+      - name: 资产与 manifest 校验
+        run: python -m medgate validate
+
+  release-gate:
+    name: 发布门禁（离线回放，无密钥）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      # 本项目的门禁语义是三态退出码：0=PASSED / 1=BLOCKED / 2=REVIEW_REQUIRED。
+      # 当前离线回放集 pretriage-safety-v1 按 manifest 契约必然产出 BLOCKED，
+      # 因此这里断言"恰好等于 1"，而不是"非零即失败"——
+      # 门禁不该拦的时候拦了（0→1）和该拦的时候没拦（1→0）都必须让 CI 红。
+      - name: 离线回放并断言门禁三态
+        run: |
+          set +e
+          python -m medgate run \
+            --db artifacts/ci.sqlite3 \
+            --report artifacts/gate.json \
+            --idempotency-key "ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          run_code=$?
+          set -e
+          echo "medgate run 退出码：${run_code}"
+          if [ "${run_code}" -ne 1 ]; then
+            echo "::error::期望离线回放产出 BLOCKED（退出码 1），实际为 ${run_code}"
+            exit 1
+          fi
+
+          set +e
+          python -m medgate gate artifacts/gate.json
+          gate_code=$?
+          set -e
+          echo "medgate gate 退出码：${gate_code}"
+          if [ "${gate_code}" -ne 1 ]; then
+            echo "::error::gate 子命令未复现同一发布决策，期望 1，实际 ${gate_code}"
+            exit 1
+          fi
+
+      - name: 断言报告内容（含无外连证据）
+        run: |
+          python - <<'PY'
+          import json, sys
+
+          report = json.loads(open("artifacts/gate.json", encoding="utf-8").read())
+          gate, summary = report["gate"], report["summary"]
+          failures = []
+
+          def check(cond, msg):
+              if not cond:
+                  failures.append(msg)
+
+          check(gate["state"] == "BLOCKED", f'gate.state 应为 BLOCKED，实际 {gate["state"]}')
+          check(gate["exit_code"] == 1, f'gate.exit_code 应为 1，实际 {gate["exit_code"]}')
+          check("UNRESOLVED_P0" in gate["reason_codes"],
+                f'reason_codes 应含 UNRESOLVED_P0，实际 {gate["reason_codes"]}')
+          # 这条是"无密钥可复现回放"的机器证据：离线路径一次外部调用都不能发生
+          check(summary["external_call_count"] == 0,
+                f'离线回放不得有外部调用，实际 {summary["external_call_count"]}')
+          check(summary["case_count"] == 12, f'case_count 应为 12，实际 {summary["case_count"]}')
+          check(summary["fixture_count"] == 24, f'fixture_count 应为 24，实际 {summary["fixture_count"]}')
+          check(bool(report.get("report_snapshot_id")), "报告快照 ID 缺失")
+
+          if failures:
+              for item in failures:
+                  print(f"::error::{item}")
+              sys.exit(1)
+
+          print(json.dumps({"gate": gate, "summary": summary}, ensure_ascii=False, indent=2))
+          print("门禁断言全部通过")
+          PY
+
+      - name: 上传门禁报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-report
+          path: artifacts/gate.json
+          # 门禁步骤失败时报告可能未生成，此处不再叠加一次失败掩盖真实原因
+          if-no-files-found: warn
+
+  static-checks:
+    name: 资产与原型静态检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 四个脚本只用 node 内置模块，无 npm 依赖
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 资产结构校验
+        run: node scripts/validate_assets.mjs
+
+      - name: 资产冒烟
+        run: node scripts/smoke_assets.mjs
+
+      - name: 原型静态断言
+        run: node scripts/check_prototype.mjs
+
+      - name: 原型冒烟
+        run: node scripts/smoke_prototype.mjs

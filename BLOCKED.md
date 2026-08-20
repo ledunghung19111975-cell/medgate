@@ -28,4 +28,4 @@
 - 竞品文档中的 Promptfoo/DeepEval 本地最小示例证据。
 - 真实运行的精确 token 和费用仍需查 DeepSeek 账户侧；当前本地客户端未持久化上游 `usage`。
 - 本地 FastAPI 已实现创建/查询回放 run、live run、复核写入、Gate 重算和报告导出；它是无身份认证、同步串行执行的本地 Demo API，不等同于生产审批服务。
-- mark-fixed 后端动作、失败任务恢复、完整跨 run 回归、GitHub Actions 和公开部署尚未实现。
+- mark-fixed 后端动作、失败任务恢复、完整跨 run 回归和公开部署尚未实现；~~GitHub Actions~~ CI 已于 2026-08-20 上线（`.github/workflows/ci.yml`）。

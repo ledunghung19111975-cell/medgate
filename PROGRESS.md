@@ -1,5 +1,14 @@
 # MedGate 开发进度
 
+## P5-1 GitHub Actions CI（2026-08-20，重排后 A 段第一项）
+
+- [x] **工作流**：`.github/workflows/ci.yml`，三个并行 job——`tests`（单测 + `medgate validate`）、`release-gate`（离线回放 + 门禁断言 + 报告上传）、`static-checks`（四个 node 静态脚本，仅用内置模块无 npm 依赖）。触发：push/PR 到 main 与手动。
+- [x] **门禁断言按"恰好等于"写，不是"非零即失败"**：离线集 `pretriage-safety-v1` 按 manifest 契约必然产出 BLOCKED，因此 CI 断言 `medgate run` 退出码 **恰好为 1**、`medgate gate` 复现同一决策、`gate.state == BLOCKED`、`reason_codes` 含 `UNRESOLVED_P0`。该拦没拦（1→0）和不该拦却拦了（0→1）都会让 CI 红。
+- [x] **无密钥回放的机器证据**：断言 `summary.external_call_count == 0`、`case_count == 12`、`fixture_count == 24`、报告快照 ID 非空。这条把 README「无外连、无密钥」的口头声明变成每次 push 都验证的硬约束。
+- [x] **本地端到端模拟**（干净 clone + 全新 venv + `pip install -e .`，2026-08-20）：`tests` job 110/110 通过、`medgate validate` status=ok；`release-gate` run 退出码 1、gate 退出码 1、七条报告断言全过；`static-checks` 四个脚本均 exit 0。
+- [x] **反向验证（断言非空绿）**：把报告的 `gate.state` 篡改为 `PASSED`、`exit_code` 篡改为 0 后重跑断言，退出码为 1 并打印两条 `::error::`，确认断言真的会让 CI 红。
+- [ ] **未覆盖**：CI 只跑离线路径，不触碰真实 DeepSeek Key（有意为之，公开仓库不放密钥）；未做多 Python 版本矩阵（本地与 CI 均为 3.12，`pyproject` 声明 `>=3.11` 但 3.11 未实测）；CI 用 pip 装 `pyproject` 有界依赖，未使用仓库内的 `uv.lock`，因此不是逐字节可复现的依赖树。
+
 ## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）
 
 - [x] **冒烟全绿**：全量 unittest 110/110（`-W error::ResourceWarning` 下通过）；`medgate validate`（fixture_count=24、expected_gate=BLOCKED、status=ok）；`node scripts/validate_assets.mjs`、`node scripts/smoke_assets.mjs`、`node scripts/check_prototype.mjs`、`node scripts/smoke_prototype.mjs` 全部 status=ok；服务 `/health` 返回 `{"status":"ok","service":"medgate-api"}`；重启后 `/api/v1/rules` 的 `rule_hash=e2c599706438d2a8395e47373accd94f472d30797f925744762ab209ef89fdb4` 与当前代码 `_rule_hash()` 一致。
@@ -93,7 +102,7 @@
 - 当前 Gate 未检查引用覆盖率、引用蕴含关系和固定版式；真实输出在“无可用知识库”时仍包含具体医学事实，但未被现有门禁稳定捕获。
 - 确定性规则在否定语义和同义表达上存在明显误报/漏报；本轮 11 处规则与 Judge 冲突需人工复核后固化回归。
 - DeepSeek 客户端尚未持久化 `usage`，因此只能核对调用数与耗时，不能从本地报告声称精确 token 或费用。
-- 尚无 GitHub Actions 或公开部署；SQLite、离线 Runner、CLI、本地 FastAPI、前端 live 接线和内容哈希已完成最小切片。
+- ~~尚无 GitHub Actions~~ CI 已于 2026-08-20 上线（见上方 P5-1 记录）；**公开部署仍未完成**。SQLite、离线 Runner、CLI、本地 FastAPI、前端 live 接线和内容哈希已完成最小切片。
 - 竞品文档仍属于官方公开资料整理，Promptfoo/DeepEval 的本地最小示例尚未执行。
 - 病例、规则、分数和复核角色均为本人编写的合成演示，尚未经过执业医师复核。
 - M3.1 目前只用注入 Fake Client 做离线验收，尚未使用用户本机 DeepSeek Key 发起新的纯文本 Agent v2 外部运行；真实模型验收仍需用户在本机确认外发后执行。
