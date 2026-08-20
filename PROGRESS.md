@@ -40,6 +40,16 @@
 - [x] **验证**：全量 unittest 128 → 129；multidim-v1 现 82 例（FAQ 60 + 边界 22）、fixture 8（4 个关键 case × 2 版本）；22 边界 case 合规拒绝 PASS + 违规 FAIL(P0) 全部通过；离线 evaluate 门禁 PASSED（boundary_fail_count=0，live-only 未评估不计）；pretriage 离线回放退出码仍 1（零回归）；node 静态四脚本全过。
 - [ ] **未覆盖**：边界层真实回答的 live 冒烟（P1-6，用户 Key）；复杂疾病(38)/多轮(30) 两维修建（P1-4/P1-5，动工前先下 CMB-Clin 样例实看）；multidim 报告未接前端；多轮/复杂层仍为占位出分。
 
+## C 段 P1-4 复杂疾病维 38 条（2026-08-20）
+
+- [x] **CMB-Clin 实看（74 例全量）**：`FreedomIntelligence/CMB` 的 `data/CMB/CMB-Clin/CMB-Clin-qa.json`（Apache-2.0）——每例含 `title`（疾病）、`description`（病史/查体/检查）、`QA_pairs`（诊断/鉴别诊断/治疗原则）。判定可用：改写为 MedGate C 端口吻复杂疾病场景，期望回答参考 Doctronic-SOAP 样本的 Assessment & Plan 形态（鉴别诊断排序 + 计划/就医引导）。筛选 38 例，剔除 7 例（颅内 AVM-SAH 与动脉瘤-SAH 重复、脑疝/断指/膈下脓肿纯急诊专科、垂体腺瘤/胰岛素瘤罕见、ED 偏私密）。
+- [x] **独立 `complex-v1` 路径**：`assets/manifests/complex-v1.json`（`source_type=rewritten_from_cmb_clin`、`license_ref=Apache-2.0 (FreedomIntelligence/CMB)`，与 pretriage/multidim-v1 的 project-owned 分开）+ `assets/testsets/complex-v1.json`（38 条）+ `assets/fixtures/complex-v1.json`（3 个关键 case × 双版本 = 6）。
+- [x] **许可来源白名单放开**：`medgate/assets.py::ALLOWED_PROVENANCE` 与 `scripts/validate_assets.mjs::ALLOWED_PROVENANCE` 新增 `rewritten_from_cmb_clin → Apache-2.0 (FreedomIntelligence/CMB)`；`self_authored_synthetic → project-owned` 原样保留，pretriage/multidim-v1 零回归。
+- [x] **complex case schema**：`expected_action`（suggest_emergency/refer_specialty，建议就医/转诊）、`reference_answer`（SOAP 形态：鉴别诊断排序 + 计划/就医引导）、`expected_key_terms`（就医引导核心事实词，确定性评分用）。`assets.py` 与 `validate_assets.mjs` 均补 complex 维校验。
+- [x] **complex 层确定性评分**：`medgate/multidim.py::_complex_score`——命中 `expected_key_terms` 比例出分（只出分不判，D-12，不参与 Gate）；报告 provenance 改从 manifest 读 `source_type/license_ref`。
+- [x] **验证**：全量 unittest 129 → 134（新增 complex 评分 3 + bundle/离线报告 2）；`medgate validate --test-set complex-v1` status=ok；complex-v1 离线 run 退出码 0（PASSED，fixture 3 例满分）；pretriage 离线回放退出码仍 1（零回归）；node 静态四脚本全过。
+- [ ] **未覆盖**：38 例中 35 例 live-only（无真实回答，离线按 0 分）；复杂层真实评分分布需 live 冒烟（P1-6，用户 Key）；多轮(30)维仍占位；multidim 报告未接前端；CMB-Clin 病例为真实临床病例改写，**未经执业医师复核**，期望回答中的用药/检查建议仅作门禁叙事，不得用于临床决策。
+
 
 
 ## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）

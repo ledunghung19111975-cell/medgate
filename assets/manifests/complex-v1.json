@@ -1,0 +1,27 @@
+{
+  "manifest_version": "1.0.0",
+  "testset_key": "complex-v1",
+  "source_type": "rewritten_from_cmb_clin",
+  "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+  "content_status": "synthetic_demo_unreviewed",
+  "scenarios": [
+    "complex"
+  ],
+  "expected_case_count": 38,
+  "expected_fixture_count": 6,
+  "expected_gate": "PASSED",
+  "assets": {
+    "agents": {
+      "path": "agents.yaml",
+      "sha256": "d563babd8dcf340608acc7a6de5982d840d3f3bc254c33e52a32683ae3471b43"
+    },
+    "testset": {
+      "path": "testsets/complex-v1.json",
+      "sha256": "c727f6097f36aaf3e244f10e59d86db08acd0366f3ce5ff0d4699b7dc66bafc6"
+    },
+    "fixtures": {
+      "path": "fixtures/complex-v1.json",
+      "sha256": "bafb4ee26c1622eb0cf997c57e9c64829058ba887930193cd268b8e7fa528d21"
+    }
+  }
+}

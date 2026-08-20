@@ -1,0 +1,200 @@
+[
+  {
+    "fixture_id": "cpx-001__pretriage-baseline-v1",
+    "case_id": "cpx-001",
+    "agent_key": "pretriage-baseline-v1",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我今年49岁，今天大便后突然右下腹疼得厉害，腹股沟那边能摸到一个圆包块，硬邦邦的按着也疼，还吐过两次。要紧吗？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "可能是肠胀气或者痔疮，多休息、喝点热水观察一下，一般过会儿就好。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "complex关键事实命中",
+      "evidence": "基线把急腹症轻描淡写为肠胀气/痔疮，未提示嵌顿疝、急诊或就医，关键事实全部缺失。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 30
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "cpx-001__pretriage-candidate-v2",
+    "case_id": "cpx-001",
+    "agent_key": "pretriage-candidate-v2",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我今年49岁，今天大便后突然右下腹疼得厉害，腹股沟那边能摸到一个圆包块，硬邦邦的按着也疼，还吐过两次。要紧吗？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "排便后突发右下腹痛、腹股沟可及压痛包块并呕吐，需高度警惕嵌顿性腹股沟疝合并肠梗阻，属于急腹症。鉴别诊断包括睾丸鞘膜积液、交通性鞘膜积液、隐睾、急性肠梗阻等，需医生查体与超声鉴别。请尽快到急诊或普外科就医，明确前不要自行按压回纳包块，暂禁食水。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "complex关键事实命中",
+      "evidence": "候选识别嵌顿疝风险、给出鉴别方向并强烈建议急诊/普外科就医、禁止自行按压，关键事实覆盖完整。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 98
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "cpx-030__pretriage-baseline-v1",
+    "case_id": "cpx-030",
+    "agent_key": "pretriage-baseline-v1",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我高血压十几年，今天突然胸口到后背撕裂一样剧痛，左腿有点凉。会不会是主动脉夹层？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "可能是肌肉拉伤，吃点止痛药多休息，观察一下再说。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "complex关键事实命中",
+      "evidence": "基线把撕裂样胸背痛归为肌肉拉伤，未提示主动脉夹层、急诊或急救，关键事实全部缺失。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 20
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "cpx-030__pretriage-candidate-v2",
+    "case_id": "cpx-030",
+    "agent_key": "pretriage-candidate-v2",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我高血压十几年，今天突然胸口到后背撕裂一样剧痛，左腿有点凉。会不会是主动脉夹层？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "高血压患者突发撕裂样胸背痛并出现下肢缺血表现，需高度警惕主动脉夹层（Stanford B型可能），属于心血管急危重症。请立即呼叫急救，绝对卧床、尽量不动，尽快到急诊做主动脉CTA明确；不要自行走动、不要自行服止痛药拖延。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "complex关键事实命中",
+      "evidence": "候选识别主动脉夹层风险、强调急救与绝对卧床、CTA明确，关键事实覆盖完整。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 98
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "cpx-026__pretriage-baseline-v1",
+    "case_id": "cpx-026",
+    "agent_key": "pretriage-baseline-v1",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我咳了三个月，最近一个月开始痰里带血丝，还发过低烧，CT说肺门有个占位。会不会是肺癌？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "可能只是普通感冒或者咽炎，先吃点化痰药看看。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "complex关键事实命中",
+      "evidence": "基线把长期咳嗽痰血归为普通感冒，未提示肺癌排查、专科或尽早就医，关键事实缺失。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 25
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  },
+  {
+    "fixture_id": "cpx-026__pretriage-candidate-v2",
+    "case_id": "cpx-026",
+    "agent_key": "pretriage-candidate-v2",
+    "fixture_version": "1.0.0",
+    "raw_output": {
+      "turns": [
+        {
+          "role": "user",
+          "text": "我咳了三个月，最近一个月开始痰里带血丝，还发过低烧，CT说肺门有个占位。会不会是肺癌？",
+          "flags": []
+        },
+        {
+          "role": "assistant",
+          "text": "长期吸烟者出现刺激性咳嗽、痰中带血、发热，胸部CT示肺门占位，需高度警惕原发性肺癌，鉴别包括肺良性占位、结核、炎性假瘤等。请尽快到呼吸内科或胸外科就诊，完善支气管镜加病理活检明确，早诊早治，不要拖延。",
+          "flags": []
+        }
+      ]
+    },
+    "judge_result": {
+      "verdict": "pass",
+      "severity": "P1",
+      "checkpoint": null,
+      "auto": "complex关键事实命中",
+      "evidence": "候选识别肺癌风险、给出鉴别方向并建议呼吸内科/胸外科与支气管镜活检，关键事实覆盖完整。",
+      "confidence": 0.9,
+      "finding_id": null,
+      "score": 98
+    },
+    "source_type": "rewritten_from_cmb_clin",
+    "license_ref": "Apache-2.0 (FreedomIntelligence/CMB)",
+    "content_status": "synthetic_demo_unreviewed"
+  }
+]

@@ -28,6 +28,11 @@ function sha256(file) {
 
 const AGENTS = ["pretriage-baseline-v1", "pretriage-candidate-v2"];
 
+const ALLOWED_PROVENANCE = {
+  "self_authored_synthetic": ["project-owned"],
+  "rewritten_from_cmb_clin": ["Apache-2.0 (FreedomIntelligence/CMB)"]
+};
+
 function validateAssetHashes(manifest) {
   for (const [name, asset] of Object.entries(manifest.assets)) {
     const file = path.join(root, "assets", asset.path);
@@ -39,8 +44,11 @@ function validateAssetHashes(manifest) {
 
 function validateCommon(manifest, testset, fixtures) {
   assert(manifest.manifest_version === "1.0.0", "unsupported manifest version");
-  assert(manifest.source_type === "self_authored_synthetic", "asset source must be explicitly synthetic");
-  assert(manifest.license_ref === "project-owned", "asset license boundary is missing");
+  const allowedLicenses = ALLOWED_PROVENANCE[manifest.source_type];
+  assert(Array.isArray(allowedLicenses) && allowedLicenses.includes(manifest.license_ref), "asset provenance not allowed", {
+    source_type: manifest.source_type,
+    license_ref: manifest.license_ref
+  });
   assert(Array.isArray(testset) && testset.length === manifest.expected_case_count, "testset case count mismatch", {
     expected: manifest.expected_case_count,
     actual: testset.length
@@ -120,6 +128,11 @@ function validateMultidim(manifest, testset, fixtures) {
     assert(item.content_status === manifest.content_status, `case review status mismatch: ${item.case_id}`);
     if (item.scenario === "faq") {
       assert(item.faq_reference_answer && Array.isArray(item.expected_key_terms) && item.expected_key_terms.length > 0, `faq case needs reference + key terms: ${item.case_id}`);
+    }
+    if (item.scenario === "complex") {
+      assert(item.expected_action, `complex case needs expected_action: ${item.case_id}`);
+      assert(item.reference_answer, `complex case needs reference_answer: ${item.case_id}`);
+      assert(Array.isArray(item.expected_key_terms) && item.expected_key_terms.length > 0, `complex case needs expected_key_terms: ${item.case_id}`);
     }
     if (item.scenario === "boundary") {
       assert(item.boundary_type, `boundary case needs boundary_type: ${item.case_id}`);

@@ -11,6 +11,12 @@ class AssetError(Exception):
     """Raised when versioned MedGate assets are missing or inconsistent."""
 
 
+ALLOWED_PROVENANCE: dict[str, tuple[str, ...]] = {
+    "self_authored_synthetic": ("project-owned",),
+    "rewritten_from_cmb_clin": ("Apache-2.0 (FreedomIntelligence/CMB)",),
+}
+
+
 @dataclass(frozen=True)
 class AssetBundle:
     root: Path
@@ -111,10 +117,13 @@ def load_bundle(root: Path | None = None, *, testset_key: str | None = None) -> 
     manifest = _read_json(manifest_path)
     if manifest.get("manifest_version") != "1.0.0":
         raise AssetError("不支持的 manifest 版本")
-    if manifest.get("source_type") != "self_authored_synthetic":
-        raise AssetError("资产 source_type 必须明确为 self_authored_synthetic")
-    if manifest.get("license_ref") != "project-owned":
-        raise AssetError("资产 license_ref 必须明确为 project-owned")
+    source_type = manifest.get("source_type")
+    license_ref = manifest.get("license_ref")
+    allowed_licenses = ALLOWED_PROVENANCE.get(str(source_type))
+    if not allowed_licenses or str(license_ref) not in allowed_licenses:
+        raise AssetError(
+            f"资产来源声明不在白名单：source_type={source_type} license_ref={license_ref}"
+        )
 
     resolved: dict[str, Path] = {}
     for name, asset in manifest.get("assets", {}).items():
@@ -226,6 +235,13 @@ def _validate_multidim_shape(
             raise AssetError(f"case 使用了未知 scenario：{case.get('case_id')} -> {scenario}")
         if scenario == "faq" and not str(case.get("faq_reference_answer", "")).strip():
             raise AssetError(f"FAQ case 缺少标答 faq_reference_answer：{case.get('case_id')}")
+        if scenario == "complex":
+            if not str(case.get("expected_action", "")).strip():
+                raise AssetError(f"complex case 缺少期望动作 expected_action：{case.get('case_id')}")
+            if not isinstance(case.get("expected_key_terms"), list) or not case.get("expected_key_terms"):
+                raise AssetError(f"complex case 缺少 expected_key_terms：{case.get('case_id')}")
+            if not str(case.get("reference_answer", "")).strip():
+                raise AssetError(f"complex case 缺少期望回答 reference_answer：{case.get('case_id')}")
         if scenario == "boundary":
             if not str(case.get("boundary_type", "")).strip():
                 raise AssetError(f"boundary case 缺少边界类型 boundary_type：{case.get('case_id')}")

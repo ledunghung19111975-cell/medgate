@@ -26,6 +26,7 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 | P1-1 多维度 schema + 独立 `multidim-v1` 评估路径 | ✅ 完成 |
 | P1-2 FAQ 维 60 条（自建） | ✅ 完成（3 例关键 case 配 fixture，其余 live-only） |
 | P1-3 边界维 22 条（自建，NOHARM 实看后判定不适用撤下） | ✅ 完成（4 类边界类型，bnd-013 配 fixture） |
+| P1-4 复杂疾病维 38 条（CMB-Clin Apache-2.0 改写，独立 `complex-v1`） | ✅ 完成（3 例关键 case 配 fixture，其余 live-only） |
 | GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 完成 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
 | 公开静态部署 | 🚧 未开始 |
@@ -79,7 +80,7 @@ assets/           版本化测试集（12 例）、24 份双版本 fixture、age
 examples/agent-pack/   Baseline / Candidate 两套本地 Agent 配置包与脱敏回归测试集
 prototype/        五页面本地工作台（总览 / 测评集详情 / 评测详情 / 病例详情 / 发布门禁）
 scripts/          资产与原型静态校验脚本（node）
-tests/            unittest 回归（当前 110 项）
+tests/            unittest 回归（当前 134 项）
 00_~14_*.md       项目说明、需求、技术、审核、竞品、决策、方案与迭代计划文档
 ```
 
@@ -87,7 +88,7 @@ tests/            unittest 回归（当前 110 项）
 
 ## 安全与数据边界
 
-- **数据**：只用本人编写的合成病例（`source_type = self_authored_synthetic`），不包含真实患者数据；未经执业医师复核。
+- **数据**：FAQ/边界/主测试集为本人编写的合成病例（`source_type = self_authored_synthetic`），不包含真实患者数据；复杂疾病维（`complex-v1`）改写自 CMB-Clin 开源病例（Apache-2.0，见 [NOTICE](./NOTICE)）。全部内容未经执业医师复核。
 - **密钥**：真实评测的 `DEEPSEEK_API_KEY` 只从页面内存或本机环境变量读取，不写入页面、请求体、快照、报告或仓库；`medgate/deepseek.py` 只读 `os.environ`。
 - **门禁语义**：`P0` 失败独立决定 `BLOCKED`，不因平均分、阈值或普通备注稀释；条件句、软化句、推迟句、跨分句条件等歧义表达按**失败关闭**处理，不构成无条件升级。
 - **回放隔离**：离线 Runner / CLI / fixture 回放不调用外部模型、不读 Key；真实 live run 结果不写入前端默认数据源，刷新回到干净空状态。
@@ -107,6 +108,8 @@ tests/            unittest 回归（当前 110 项）
 ## 第三方研究引用
 
 候选底座（Medmarks、CRAFT-MD、Phlox、PhysicianBench、TrialGPT 等）的许可调研记录在 [`05_关键决策记录.md`](./05_关键决策记录.md)；本仓库**未复制或集成**任何第三方代码/数据，仅以合成演示资产实现评测门禁流程。
+
+复杂疾病维（`complex-v1`，38 条）依据 [FreedomIntelligence/CMB](https://github.com/FreedomIntelligence/CMB) 的 CMB-Clin 病例改写（Apache-2.0），改写后的病例与期望回答均为演示用合成内容，**未经执业医师复核，不得用于任何临床决策**；CMB 引用：Wang, Xidong et al., "CMB: A Comprehensive Medical Benchmark in Chinese", arXiv:2308.08833。
 
 ---
 

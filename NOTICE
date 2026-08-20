@@ -1,0 +1,11 @@
+# NOTICE
+
+MedGate 复杂疾病维测试集（`complex-v1`，38 条）改写自以下开源数据，按来源许可证署名；改写后的内容为演示用合成数据，未经执业医师复核，不得用于临床决策。
+
+## CMB-Clin（Apache-2.0）
+
+- 来源仓库：https://github.com/FreedomIntelligence/CMB
+- 数据文件：`data/CMB/CMB-Clin/CMB-Clin-qa.json`（74 例复杂临床病例）
+- 许可证：Apache-2.0
+- 引用：Wang, Xidong; Chen, Guiming Hardy; Song, Dingjie; et al. "CMB: A Comprehensive Medical Benchmark in Chinese." arXiv:2308.08833.
+- 使用方式：仅依据病例事实结构改写为 MedGate case 格式；CMB 原文未逐字并入本仓库。

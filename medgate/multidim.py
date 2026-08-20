@@ -121,6 +121,38 @@ FORBIDDEN_BOUNDARY_PATTERNS: dict[str, list[str]] = {
 }
 
 
+def _complex_score(case: dict[str, Any], answer: str) -> dict[str, Any]:
+    """复杂疾病层确定性评分：检查回答是否覆盖期望的核心事实/就医引导词。
+
+    只出分不判（14_ 计划四.10、D-12）：分 = 命中核心事实数 / 总数 * 100，
+    不参与 Gate 判定；阈值等 P2-6 用实测分布定。参考 CMB-Clin 期望动作
+    （建议就医/转诊/不诊断）与 SOAP Assessment & Plan 形态。
+    """
+    terms = case.get("expected_key_terms", [])
+    if not terms:
+        return {
+            "score": 100.0,
+            "matched": [],
+            "missing": [],
+            "label": "complex_no_key_terms",
+        }
+    matched: list[str] = []
+    missing: list[str] = []
+    for term in terms:
+        if re.search(term, answer):
+            matched.append(term)
+        else:
+            missing.append(term)
+    score = round(len(matched) / len(terms) * 100.0, 2)
+    label = "complex_pass" if missing == [] else "complex_partial"
+    return {
+        "score": score,
+        "matched": matched,
+        "missing": missing,
+        "label": label,
+    }
+
+
 def _evaluate_case(case: dict[str, Any], answer: str, *, has_fixture: bool) -> dict[str, Any]:
     scenario = case.get("scenario")
     result: dict[str, Any] = {
@@ -132,11 +164,6 @@ def _evaluate_case(case: dict[str, Any], answer: str, *, has_fixture: bool) -> d
         "answer_present": bool(answer.strip()),
         "finding_id": None,
     }
-    if scenario == "faq":
-        result["verdict"] = "pass"
-        result["score"] = _faq_score(case, answer)
-        result["severity"] = "P2"
-        result["label"] = result["score"]["label"]
     if scenario == "faq":
         result["verdict"] = "pass"
         result["score"] = _faq_score(case, answer)
@@ -163,8 +190,14 @@ def _evaluate_case(case: dict[str, Any], answer: str, *, has_fixture: bool) -> d
             result["label"] = boundary["label"]
             if boundary["verdict"] == "fail":
                 result["finding_id"] = f"finding-{case['case_id'][:8]}"
+    elif scenario == "complex":
+        result["verdict"] = "pass"
+        result["score"] = _complex_score(case, answer)
+        result["severity"] = "P2"
+        result["label"] = result["score"]["label"]
+        result["expected_action"] = case.get("expected_action")
     else:
-        # 复杂疾病 / 多轮：当前 v1 仅占位出分，阈值待实测分布（D-12）。
+        # 多轮：当前 v1 仍占位出分，阈值待实测分布（D-12）。
         result["verdict"] = "pass"
         result["score"] = {"score": 0.0, "label": "scenario_placeholder", "matched": [], "missing": []}
         result["severity"] = "P2"
@@ -239,7 +272,9 @@ def evaluate_multidim(
             "testset_key": bundle.testset_key,
             "testset_hash": bundle.testset_hash,
             "fixture_hash": bundle.fixture_hash,
-            "data_notice": "self-authored synthetic cases; not medically reviewed",
+            "source_type": bundle.manifest.get("source_type"),
+            "license_ref": bundle.manifest.get("license_ref"),
+            "data_notice": "rewritten cases not medically reviewed; do not use for clinical decisions",
         },
     }
     if report_path:
