@@ -34,6 +34,7 @@ class ChatResult:
     model: str
     finish_reason: str | None
     tool_calls: list[dict[str, Any]] | None = None
+    usage: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -168,12 +169,16 @@ class DeepSeekClient:
                 tool_calls = message.get("tool_calls")
                 if tool_calls is not None and not isinstance(tool_calls, list):
                     tool_calls = None
+                usage = body.get("usage")
+                if usage is not None and not isinstance(usage, dict):
+                    usage = None
                 return ChatResult(
                     content=content,
                     response_id=str(body["id"]) if body.get("id") else None,
                     model=str(body.get("model") or self.model),
                     finish_reason=str(choice["finish_reason"]) if choice.get("finish_reason") else None,
                     tool_calls=tool_calls,
+                    usage=usage,
                 )
             except (KeyError, IndexError, TypeError, ValueError) as exc:
                 raise DeepSeekError("DEEPSEEK_INVALID_RESPONSE", "DeepSeek 返回结构无法解析，本次运行未生成门禁结论", 502) from exc

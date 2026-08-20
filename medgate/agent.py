@@ -1030,6 +1030,7 @@ class Trace:
     estimated_input_tokens: int
     max_output_tokens: int
     error: dict[str, str] | None = None
+    usage: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -1464,6 +1465,9 @@ class AgentLoop:
                             response_id = str(getattr(result, "response_id", "") or "") or None
                             model = str(getattr(result, "model", "") or snapshot.environment["model"])
                             finish_reason = getattr(result, "finish_reason", None)
+                            usage = getattr(result, "usage", None)
+                            if usage is not None and not isinstance(usage, dict):
+                                usage = None
                             error = None
                             if model != snapshot.environment["model"]:
                                 environment_drift = True
@@ -1475,6 +1479,7 @@ class AgentLoop:
                             response_id = None
                             model = snapshot.environment["model"]
                             finish_reason = None
+                            usage = None
                             error = _safe_exception(exc)
                             failure = error
                         duration_ms = int((time.monotonic() - started_clock) * 1000)
@@ -1499,6 +1504,7 @@ class AgentLoop:
                             estimated_input_tokens=estimated_input_tokens,
                             max_output_tokens=self.max_tokens,
                             error=error,
+                            usage=usage,
                         )
                         traces.append(trace)
                         case_traces.append(trace)
