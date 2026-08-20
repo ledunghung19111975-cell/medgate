@@ -9,11 +9,13 @@
 - 真实验收前仍需在本机确认将 Prompt、目标 `SKILL.md` 和脱敏测试输入发送给 DeepSeek；Key 不写入快照、报告或仓库。
 - RAG `knowledge_search`、推荐 `recommend_services`、真实 Tool trace 和三类 Skill 正式合并门禁顺延到 M3.2–M3.4。
 
-## P1 多维度测试集（P1-1/P1-2 已建，live 验收待用户）
+## P1 多维度测试集（P1-1~P1-4 已建，live 验收待用户）
 
 - P1-1 schema + 独立 `multidim-v1` 路径 + P1-2 FAQ 60 条已完成（离线可用），但 **FAQ 三层真实评分分布未实测**——live 冒烟（P1-6）需用户确认外发 DeepSeek Key；在实测分布出来前，FAQ/复杂疾病/多轮三层只出分不判（D-12），阈值待用户拍板。
 - 复杂疾病(38)维已建成（P1-4，`complex-v1` 独立 testset_key，CMB-Clin Apache-2.0 改写），但 **35/38 例 live-only、无真实回答**——离线评估仅 3 个关键 case（cpx-001/cpx-030/cpx-026）有 fixture 满分，其余 0 分；复杂层真实评分分布需 live 冒烟（P1-6，用户 Key）。
-- 多轮(30)维（P1-5）未开始；CMB-Clin 的多轮结构（多轮 QA）已在实看中确认可用，动工前不必再下样例。
+- 多轮(30)维（P1-5）未开始；CMB-Clin 的多轮结构（多轮 QA）已在实看中确认可用，动工前不必再下样例；Chinese-medical-dialogue 存在多版本同名数据集（ticoAg=Apache-2.0 / Toyhom=MIT），动工时须锁定具体来源并下样例实看（`14_` P1-5）。
+- **边界覆盖语义（2026-08-20 起）**：boundary live-only case 未评估时整体 gate 为 `REVIEW_REQUIRED`（`BOUNDARY_NOT_EVALUATED`，退出码 2），不再是无声 `PASSED`——未评估 ≠ 通过；live 冒烟补齐 21 例真实回答后回到 `PASSED`（manifest `expected_gate` 已同步）。
+- **live 路径只支持 pretriage 测试集**（`api.py` 的 `load_bundle` 不接收其他 testset）：P1-6 冒烟与 P2-1 大规模真实运行的前置是 live 路径 testset 参数化（`14_` §一.4）。
 - multidim 的 3 个关键 case 双版本 fixture 目前为合成占位，未做真实 live 录制；`multidim-v1` 报告尚未接入前端。
 
 
@@ -34,6 +36,14 @@
 ## 后置工作（不阻塞 M1）
 
 - 竞品文档中的 Promptfoo/DeepEval 本地最小示例证据。
-- 真实运行的精确 token 和费用仍需查 DeepSeek 账户侧；当前本地客户端未持久化上游 `usage`。
+- 真实运行的精确 token 和费用仍需查 DeepSeek 账户侧；当前本地客户端未持久化上游 `usage`（P5-3）。
 - 本地 FastAPI 已实现创建/查询回放 run、live run、复核写入、Gate 重算和报告导出；它是无身份认证、同步串行执行的本地 Demo API，不等同于生产审批服务。
 - mark-fixed 后端动作、失败任务恢复、完整跨 run 回归和公开部署尚未实现；~~GitHub Actions~~ CI 已于 2026-08-20 上线（`.github/workflows/ci.yml`）。
+
+## 已知限制（2026-08-20 全量审核披露，改动需真实 live 环境验证，暂不修）
+
+- `api.py::_execute_live_run` 持 `live_lock` 贯穿分钟级 `record_live`，并发的同 key 请求会阻塞排队而非立即 409（`LIVE_RUN_BUSY` 分支基本不可达）；单机 Demo 场景无实害。
+- `live.py` 预算计数不含 `deepseek.py` 内部 429 重试的调用，`external_call_count` 略低估（退避算法本身正确，有序列化测试）。
+- `live.py::_parse_review` 不校验 Judge `final_verdict` 与逐条 verification 表的自洽性（violation=true 却 final=pass 不拒绝）；已有低置信度 → `REVIEW_REQUIRED` 兜底。
+- `prompts.py::bad_case_count` 按 prompt hash OR 匹配，版本既作 baseline 又作 candidate 对比时，candidate findings 会计入该 baseline 版本指标。
+- `db.py` 未启用 WAL/`busy_timeout`，多进程并发写同一 SQLite 有锁库风险；当前单进程 Demo 用法无实害。

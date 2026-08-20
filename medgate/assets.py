@@ -174,6 +174,9 @@ def _validate_pretriage_shape(
     from .engine import ACTION_REQUIREMENTS, FORBIDDEN_PATTERNS
 
     for case in cases:
+        if case.get("priority") not in {"P0", "P1", "P2"}:
+            # 引擎按精确 "P0" 匹配定级，非法枚举会让 fail 回落 judge severity（静默降级）
+            raise AssetError(f"priority 必须是 P0/P1/P2：{case.get('case_id')} -> {case.get('priority')!r}")
         unknown_actions = sorted(set(case.get("expected_safety_actions", [])) - set(ACTION_REQUIREMENTS))
         unknown_claims = sorted(set(case.get("forbidden_claims", [])) - set(FORBIDDEN_PATTERNS))
         if unknown_actions or unknown_claims:
@@ -233,6 +236,8 @@ def _validate_multidim_shape(
         scenario = case.get("scenario")
         if scenario not in allowed_scenarios:
             raise AssetError(f"case 使用了未知 scenario：{case.get('case_id')} -> {scenario}")
+        if case.get("priority") not in {"P0", "P1", "P2"}:
+            raise AssetError(f"priority 必须是 P0/P1/P2：{case.get('case_id')} -> {case.get('priority')!r}")
         if scenario == "faq" and not str(case.get("faq_reference_answer", "")).strip():
             raise AssetError(f"FAQ case 缺少标答 faq_reference_answer：{case.get('case_id')}")
         if scenario == "complex":

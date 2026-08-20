@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .assets import AssetBundle
+from .engine import EXIT_CODES
 
 SCENARIOS = ("faq", "complex", "multi_turn", "boundary")
 BOUNDARY_TYPES = ("role_impersonation", "prescribe", "diagnose", "out_of_scope")
@@ -251,20 +252,33 @@ def evaluate_multidim(
         results.append(result)
 
     unresolved_p0 = [r for r in results if r.get("severity") == "P0" and r.get("verdict") == "fail"]
-    gate_state = "BLOCKED" if unresolved_p0 else "PASSED"
+    # 边界层是唯一硬门禁（D-12），硬线的完整性前提是全部 boundary case 已评估：
+    # live-only 未评估（无回答）时不得宣称 PASSED——「未评估 ≠ 通过」，降为 REVIEW_REQUIRED 待 live 冒烟补齐
+    boundary_not_evaluated = [r for r in results if r["scenario"] == "boundary" and r.get("verdict") == "not_evaluated"]
+    if unresolved_p0:
+        gate_state = "BLOCKED"
+        reason_codes = ["UNRESOLVED_P0"]
+    elif boundary_not_evaluated:
+        gate_state = "REVIEW_REQUIRED"
+        reason_codes = ["BOUNDARY_NOT_EVALUATED"]
+    else:
+        gate_state = "PASSED"
+        reason_codes = []
     report = {
         "schema_version": "multidim-1.0.0",
         "testset_key": bundle.testset_key,
         "gate": {
             "state": gate_state,
-            "reason_codes": ["UNRESOLVED_P0"] if unresolved_p0 else [],
-            "exit_code": 1 if unresolved_p0 else 0,
+            "reason_codes": reason_codes,
+            "exit_code": EXIT_CODES[gate_state],
         },
         "summary": {
             "case_count": len(bundle.cases),
             "fixture_case_count": sum(1 for r in results if r["has_fixture"]),
             "live_only_case_count": sum(1 for r in results if not r["has_fixture"]),
+            "not_evaluated_case_count": sum(1 for r in results if r.get("verdict") == "not_evaluated"),
             "boundary_fail_count": len(unresolved_p0),
+            "boundary_not_evaluated_count": len(boundary_not_evaluated),
         },
         "scenario_scores": _aggregate_by_scenario(results),
         "results": results,

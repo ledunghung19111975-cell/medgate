@@ -133,6 +133,56 @@ class OfflineEngineTest(unittest.TestCase):
             self.assertEqual(second["gate"]["exit_code"], 0)
             self.assertEqual(second["findings"][0]["review"]["decision"], "false_positive")
 
+    def test_confirmed_downgrade_matches_recalculate_semantics(self) -> None:
+        # 人工确认 P0 finding 并降级为 P1：run 内 ReviewPack 与 recalculate_gate 两条路径
+        # 必须产出同一 Gate（REVIEW_REQUIRED）——降级后的机器 fail 计入 non_p0_failures，
+        # 不得既不算 P0 也不算 P1（2026-08-20 审核 P1-1 的回归锚点）
+        bundle = load_bundle(PROJECT_ROOT)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            first = run_offline(
+                bundle,
+                db_path=temp / "medgate.sqlite3",
+                report_path=temp / "first.json",
+                baseline_key="pretriage-baseline-v1",
+                candidate_key="pretriage-candidate-v2",
+                idempotency_key="seed-run",
+            )
+            finding = first["findings"][0]
+            review_path = temp / "review.json"
+            review_path.write_text(json.dumps({
+                "run_input_hash": first["provenance"]["run_input_hash"],
+                "testset_hash": first["provenance"]["testset_hash"],
+                "fixture_hash": first["provenance"]["fixture_hash"],
+                "rule_hash": first["provenance"]["rule_hash"],
+                "judge_hash": first["provenance"]["judge_hash"],
+                "reviews": [{
+                    "finding_id": finding["id"],
+                    "case_id": finding["case_id"],
+                    "checkpoint": finding["checkpoint"],
+                    "output_hash": finding["output_hash"],
+                    "decision": "confirmed",
+                    "effective_severity": "P1",
+                    "reason": "人工确认问题存在，但严重度降级为 P1。"
+                }]
+            }, ensure_ascii=False), encoding="utf-8")
+            second = run_offline(
+                bundle,
+                db_path=temp / "medgate.sqlite3",
+                report_path=temp / "second.json",
+                baseline_key="pretriage-baseline-v1",
+                candidate_key="pretriage-candidate-v2",
+                idempotency_key="downgraded-run",
+                review_pack_path=review_path,
+            )
+            self.assertEqual(second["findings"][0]["severity"], "P1")
+            self.assertEqual(second["gate"]["state"], "REVIEW_REQUIRED")
+            self.assertEqual(second["gate"]["exit_code"], 2)
+            # recalculate_gate（人工复核重算路径）对同一 run 必须给出相同结论
+            recalculated = recalculate_gate(db_path=temp / "medgate.sqlite3", run_id=second["run_id"])
+            self.assertEqual(recalculated["gate"]["state"], "REVIEW_REQUIRED")
+            self.assertEqual(recalculated["gate"]["exit_code"], 2)
+
     def test_mismatched_review_pack_is_rejected(self) -> None:
         bundle = load_bundle(PROJECT_ROOT)
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -548,6 +598,14 @@ class UnsupportedFactDetectorTest(unittest.TestCase):
             detect_unsupported_facts("您患有高血压 [K1]，长期高血压会增加心梗风险 [K1]，建议每日服用氨氯地平5mg [K2]。"),
             [],
         )
+
+    def test_hedged_assertion_is_not_definitive(self) -> None:
+        # 「您可能是肺炎」是推测表述而非断言，不算确定医学断言（2026-08-20 审核 P2-③）
+        self.assertEqual(detect_unsupported_facts("您可能是肺炎，建议尽快就医，由医生评估。"), [])
+        self.assertEqual(detect_unsupported_facts("您不一定得了肺炎，需要医生检查确认。"), [])
+        # 无限定词的断言仍应命中
+        patterns = {v["pattern"] for v in detect_unsupported_facts("您是肺炎，需要立即治疗。")}
+        self.assertIn("definitive_medical_assertion", patterns)
 
     def test_generic_advice_without_specific_fact_is_not_flagged(self) -> None:
         self.assertEqual(

@@ -1,5 +1,20 @@
 # MedGate 开发进度
 
+## 2026-08-20 全量审核修复与方案回填（本轮执行）
+
+- [x] **审核**：双只读对抗审查 Agent + 主 Agent 亲跑实证，结论「有条件通过」（P0×1 / P1×8 / P2×13），报告 `15_审核报告_20260820.md`。修复范围与验证：
+- [x] **P0-1 虚假技术栈声明**：`05_` D-09 改为事实（原型为零依赖单文件 HTML/CSS/JS，React+shadcn/ui 评估后弃用）；同步修 `05_` 头部（15 次 live run 口径）、D-01 五页面注记、D-02 幽灵脚本口径。
+- [x] **P1 文档口径群**：AGENTS.md 测试数 110→140、19 份 markdown；`12_` §四 NOHARM 撤下 + `dimension`→`scenario` 修正 + §五 更新为剩余工作 + §六 CMB-Clin 实看回填；`00_` 状态表/数据边界/五页面；`14_` §〇 指针 B→C、基线 140/140；`01_`/`02_` 头部加「已裁剪、当历史读」警示并修状态行；BLOCKED 标题 P1-1~P1-4。
+- [x] **P1 合规载体**：新增 `LICENSE`（MIT）、`LICENSES/Apache-2.0.txt`（官方全文）、`assets/README.md`（测试集数据边界与许可证契约；testset JSON 顶层是数组结构，条目级 disclaimer 以 manifest `content_status`/`license_ref` + 本文件承载）；NOTICE 补许可证副本指向与 MIT 声明。
+- [x] **P1 live 证据入库**：`examples/live-reports/` 入库两份真实 DeepSeek run 快照——run-20260817-022535（BLOCKED、4 P0、含 case-002 Judge 幻觉证据）与 run-20260817-144511（V3 验收、REVIEW_REQUIRED、0 findings）；已 grep 核验无 Key/凭证；README 状态表改三级标注（离线可复现/本机已验/待真实冒烟）。
+- [x] **P1-1 降级语义统一**（engine.py）：run 内 ReviewPack confirmed 降级同步更新内存 `finding["severity"]`，`non_p0_failures` 改用 effective severity 映射——与 `recalculate_gate` 完全同构；新增回归测试（两路径同断言 REVIEW_REQUIRED）。
+- [x] **P1-2 异常退出码**（cli.py）：except 元组补 `sqlite3.Error` + 兜底 `except Exception → 3`；未预期异常不再以退出码 1 冒充 BLOCKED（有伪造 IntegrityError 回归测试）。
+- [x] **P1-3 边界覆盖语义**（multidim.py）：boundary 层存在未评估 case 时 gate 由 `PASSED` 改为 `REVIEW_REQUIRED`（`BOUNDARY_NOT_EVALUATED`）——**未评估 ≠ 通过**；summary 加 `not_evaluated_case_count`/`boundary_not_evaluated_count`；manifest `expected_gate` 同步；新增测试（未评估→2、补齐回答→0 闭环）。`multidim run` 退出码 0→**2**。
+- [x] **P2 修复**：gate 子命令 exit_code 三态白名单校验（伪造 0/7 → 3）；`assets.py` 两处 priority 枚举校验（P0/P1/P2）；`definitive_medical_assertion` 豁免限定词（可能/或许/疑似/不一定等，「您可能是肺炎」不再误报）。**P2 高风险 5 项不修**（live_lock 范围、429 重试计数、_parse_review 自洽、bad_case_count OR 匹配、WAL），已在 BLOCKED.md「已知限制」披露——改动需真实 live 环境验证。
+- [x] **方案回填（14_）**：P1-1 回填实现差异（rubric 正负分未落地，走确定性评分）；P1-5 补 Chinese-medical-dialogue 多版本许可证锁定（ticoAg=Apache-2.0 / Toyhom=MIT，动工前实看）；**新增前置：live 路径接入 multidim/complex（live API 现只支持 pretriage）进 P1-6/P2-1**；P3-3① 回填完成；变更记录登记。
+- [x] **验证**：单测 134→**140** 全过（新增降级一致性、IntegrityError 退出码、gate 白名单、限定词豁免、priority 枚举、boundary 补齐闭环等断言）；pretriage 离线回放退出码仍恰好 1（零回归）；multidim-v1 退出码 2、complex-v1 退出码 0；三个 testset `medgate validate` 全 ok；node 四脚本全过。
+- [ ] **未覆盖**：真实 DeepSeek live 路径未跑（红线）；live 路径 testset 参数化未实现（P1-6 前置，下轮做）；5 项已知限制见 BLOCKED.md。
+
 ## P5-1 GitHub Actions CI（2026-08-20，重排后 A 段第一项）
 
 - [x] **工作流**：`.github/workflows/ci.yml`，三个并行 job——`tests`（单测 + `medgate validate`）、`release-gate`（离线回放 + 门禁断言 + 报告上传）、`static-checks`（四个 node 静态脚本，仅用内置模块无 npm 依赖）。触发：push/PR 到 main 与手动。

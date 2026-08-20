@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 import uuid
 from pathlib import Path
@@ -50,8 +51,15 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "gate":
             report = json.loads(args.report.read_text(encoding="utf-8"))
-            print(json.dumps(report.get("gate", {}), ensure_ascii=False, indent=2))
-            return int(report.get("gate", {}).get("exit_code", 3))
+            gate = report.get("gate", {})
+            state, exit_code = gate.get("state"), gate.get("exit_code")
+            # 报告是外部输入：state/exit_code 必须落在三态白名单内且互相一致，
+            # 伪造或损坏的 exit_code（如 0/7）不得原样透传给 CI 断言
+            if state not in EXIT_CODES or exit_code != EXIT_CODES[state]:
+                print(json.dumps({"error": f"报告 gate 无效：state={state!r}, exit_code={exit_code!r}", "exit_code": 3}, ensure_ascii=False), file=sys.stderr)
+                return 3
+            print(json.dumps(gate, ensure_ascii=False, indent=2))
+            return int(exit_code)
         bundle = load_bundle(args.project_root, testset_key=args.test_set)
         if bundle.testset_key != args.test_set:
             raise ValueError(f"未知测试集：{args.test_set}")
@@ -75,8 +83,11 @@ def main(argv: list[str] | None = None) -> int:
             "idempotent_replay": report.get("idempotent_replay", False),
         }, ensure_ascii=False, indent=2))
         return int(report["gate"]["exit_code"])
-    except (AssetError, ValueError, OSError, KeyError, json.JSONDecodeError) as exc:
+    except (AssetError, ValueError, OSError, KeyError, sqlite3.Error, json.JSONDecodeError) as exc:
         print(json.dumps({"error": str(exc), "exit_code": 3}, ensure_ascii=False), file=sys.stderr)
+        return 3
+    except Exception as exc:  # 执行错误必须是 3，逃逸的未预期异常不得以退出码 1 冒充 BLOCKED
+        print(json.dumps({"error": f"{type(exc).__name__}: {exc}", "exit_code": 3}, ensure_ascii=False), file=sys.stderr)
         return 3
 
 

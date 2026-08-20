@@ -12,7 +12,7 @@
   ],
   "expected_case_count": 82,
   "expected_fixture_count": 8,
-  "expected_gate": "PASSED",
+  "expected_gate": "REVIEW_REQUIRED",
   "assets": {
     "agents": {
       "path": "agents.yaml",
