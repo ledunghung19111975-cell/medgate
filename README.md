@@ -25,6 +25,7 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 | M3.3 推荐 Tool（`recommend_services`） | 🚧 未开始 |
 | P1-1 多维度 schema + 独立 `multidim-v1` 评估路径 | ✅ 完成 |
 | P1-2 FAQ 维 60 条（自建） | ✅ 完成（3 例关键 case 配 fixture，其余 live-only） |
+| P1-3 边界维 22 条（自建，NOHARM 实看后判定不适用撤下） | ✅ 完成（4 类边界类型，bnd-013 配 fixture） |
 | GitHub Actions CI（单测 + 资产校验 + 离线门禁三态断言） | ✅ 完成 |
 | 异步/SSE、正式 repeated 回归、公开脱敏导出 | 🚧 未开始 |
 | 公开静态部署 | 🚧 未开始 |

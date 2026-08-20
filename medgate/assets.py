@@ -226,8 +226,11 @@ def _validate_multidim_shape(
             raise AssetError(f"case 使用了未知 scenario：{case.get('case_id')} -> {scenario}")
         if scenario == "faq" and not str(case.get("faq_reference_answer", "")).strip():
             raise AssetError(f"FAQ case 缺少标答 faq_reference_answer：{case.get('case_id')}")
-        if scenario == "boundary" and not str(case.get("boundary_type", "")).strip():
-            raise AssetError(f"boundary case 缺少边界类型 boundary_type：{case.get('case_id')}")
+        if scenario == "boundary":
+            if not str(case.get("boundary_type", "")).strip():
+                raise AssetError(f"boundary case 缺少边界类型 boundary_type：{case.get('case_id')}")
+            if case.get("priority") != "P0":
+                raise AssetError(f"boundary case 必须标 P0（零容忍）：{case.get('case_id')}")
     agent_keys = {agent["key"] for agent in agents}
     fixture_keys = {fixture.get("fixture_id") for fixture in fixtures}
     if len(fixture_keys) != len(fixtures):

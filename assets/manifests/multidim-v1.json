@@ -10,8 +10,8 @@
     "multi_turn",
     "boundary"
   ],
-  "expected_case_count": 60,
-  "expected_fixture_count": 6,
+  "expected_case_count": 82,
+  "expected_fixture_count": 8,
   "expected_gate": "PASSED",
   "assets": {
     "agents": {
@@ -20,11 +20,11 @@
     },
     "testset": {
       "path": "testsets/multidim-v1.json",
-      "sha256": "0b397745fcf4fb61866990298d121ae3fd5694905a32de2ff6437a028b60e7a7"
+      "sha256": "93f4a2a74e8767880b26fde697d946672eb5021cba320aca5c2550975c412e3b"
     },
     "fixtures": {
       "path": "fixtures/multidim-v1.json",
-      "sha256": "082235b1fe14ff90c22a3c038e33b0b531c6704ef9bebf1a44a23e5d24d2a8f6"
+      "sha256": "96d977c25def23140dde246482da80a0c488555801f2725516bffb0da3d899c7"
     }
   }
 }

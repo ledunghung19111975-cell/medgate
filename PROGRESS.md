@@ -30,6 +30,16 @@
 - [x] **验证**：全量 unittest 117 → 128（新增 11 项 multidim 测试）；pretriage 离线回放退出码仍为 1（BLOCKED，零回归）；multidim validate status=ok、run 退出码 0（PASSED）；node 静态四脚本全过。
 - [ ] **未覆盖**：FAQ 三层真实评分分布（live 冒烟需用户 Key，见 P1-6）；复杂疾病(38)/多轮(30)/边界(22) 三维修建（P1-3/P1-4/P1-5，动工前先下 NOHARM/CMB-Clin 样例实看）；`expected_fixture_count=6` 的 3 个关键 case 双版本 fixture 目前为合成占位（未做真实 live 录制）；multidim 报告尚未接入前端展示。
 
+## C 段 P1-3 边界维 22 条（2026-08-20）
+
+- [x] **NOHARM 实看判定不适用**：下载 `ARISENetwork/mast` 的 `benchmarks/donoharm/dataset/items.jsonl` 全 330 条实看——结构为英文复杂临床病例+单轮医学问题（分类是 Age/Sex/Lab 等医学扰动维度），无中文对话、无安全边界意图标注（角色冒充/开处方/下诊断/超范围），与 MedGate 边界维结构不匹配。**P1-3 改为全部自建**（NOHARM 撤下，`12_` §六、`14_` P1-3 已同步；NOHARM 的 `Severe_rate` 零容忍指标形态仍作评分参考）。
+- [x] **边界维 22 条自建**：新增 `bnd-001~bnd-022` 中文对话式越权/拒答场景，覆盖四类边界类型——role_impersonation 角色冒充(6)、prescribe 开处方(6)、diagnose 下诊断(6)、out_of_scope 超范围(4)。每条含 `expected_refusal`（必须拒绝并引导就医）与 `forbidden_claims`（违规行为类型），全部标 P0（边界层零容忍）。
+- [x] **判定规则扩展**：`FORBIDDEN_BOUNDARY_PATTERNS` 扩充覆盖常见越权表达（帮你开处方/解读报告/自称医生团队等），修复「无法诊断是否肺炎」类拒绝被误判为违规的漏网（`diagnose` 模式收紧为 `你(是|得了|患有|确诊为)+病名` 断言形式）。
+- [x] **live-only 未评估语义**：边界 case 无回答（live-only 未运行）标 `not_evaluated`，不计违规、不计入 Gate，避免把「未评估」误判为「违规 BLOCKED」。
+- [x] **关键 case fixture**：bnd-013（下诊断）配双版本合规拒绝 fixture（pass），CI/离线回放可验证边界层合规路径。
+- [x] **验证**：全量 unittest 128 → 129；multidim-v1 现 82 例（FAQ 60 + 边界 22）、fixture 8（4 个关键 case × 2 版本）；22 边界 case 合规拒绝 PASS + 违规 FAIL(P0) 全部通过；离线 evaluate 门禁 PASSED（boundary_fail_count=0，live-only 未评估不计）；pretriage 离线回放退出码仍 1（零回归）；node 静态四脚本全过。
+- [ ] **未覆盖**：边界层真实回答的 live 冒烟（P1-6，用户 Key）；复杂疾病(38)/多轮(30) 两维修建（P1-4/P1-5，动工前先下 CMB-Clin 样例实看）；multidim 报告未接前端；多轮/复杂层仍为占位出分。
+
 
 
 ## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）
