@@ -750,27 +750,38 @@ def create_app(
             with app.state.live_lock:
                 if "scenarios" in bundle.manifest:
                     # 多维测试集 live：直接调用模型（不走 pretriage 的 Judge），按 scenario 确定性评分
+                    # 为保持与 pretriage 的进度事件一致，触发 run_started 且 baseline/candidate 各做一次
+                    if on_event:
+                        on_event({
+                            "type": "run_started",
+                            "case_count": len(bundle.cases),
+                            "total_items": len(bundle.cases) * 2,
+                            "total_calls": sum(len(c["input"]["turns"]) for c in bundle.cases) * 2,
+                            "model": live_model,
+                        })
                     candidate_answers: dict[str, str] = {}
                     external_call_count = 0
-                    for case in bundle.cases:
-                        if should_cancel and should_cancel():
-                            raise LiveRunCancelled()
-                        messages: list[dict[str, str]] = [{"role": "system", "content": payload.candidate_prompt}]
-                        answer = ""
-                        for turn in case["input"]["turns"]:
-                            messages.append({"role": "user", "content": str(turn)})
-                            if on_event:
-                                on_event({"type": "item_started", "case_id": case["case_id"], "role": "candidate"})
-                            result = client.complete(messages=messages, max_tokens=1024)
-                            content = getattr(result, "content", "") or ""
-                            if not isinstance(content, str):
-                                content = str(content)
-                            answer = content
-                            messages.append({"role": "assistant", "content": answer})
-                            external_call_count += 1
-                            if on_event:
-                                on_event({"type": "item_completed", "case_id": case["case_id"], "role": "candidate"})
-                        candidate_answers[case["case_id"]] = answer
+                    for role, prompt in [("baseline", payload.baseline_prompt), ("candidate", payload.candidate_prompt)]:
+                        for case in bundle.cases:
+                            if should_cancel and should_cancel():
+                                raise LiveRunCancelled()
+                            messages: list[dict[str, str]] = [{"role": "system", "content": prompt}]
+                            answer = ""
+                            for turn in case["input"]["turns"]:
+                                messages.append({"role": "user", "content": str(turn)})
+                                if on_event:
+                                    on_event({"type": "item_started", "case_id": case["case_id"], "role": role})
+                                result = client.complete(messages=messages, max_tokens=1024)
+                                content = getattr(result, "content", "") or ""
+                                if not isinstance(content, str):
+                                    content = str(content)
+                                answer = content
+                                messages.append({"role": "assistant", "content": answer})
+                                external_call_count += 1
+                                if on_event:
+                                    on_event({"type": "item_completed", "case_id": case["case_id"], "role": role, "turns": len(case["input"]["turns"])})
+                            if role == "candidate":
+                                candidate_answers[case["case_id"]] = answer
                     md_report = evaluate_multidim(
                         bundle,
                         candidate_answers=candidate_answers,
