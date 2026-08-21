@@ -745,24 +745,29 @@ def create_app(
     ) -> dict[str, Any]:
         try:
             with app.state.live_lock:
-                recording = record_live(
-                    bundle,
-                    baseline_prompt=payload.baseline_prompt,
-                    candidate_prompt=payload.candidate_prompt,
-                    model=live_model,
-                    client=client,
-                    on_event=on_event,
-                    should_cancel=should_cancel,
-                    concurrency=settings.live_concurrency,
-                )
                 if "scenarios" in bundle.manifest:
-                    # 多维测试集 live：用 candidate 侧 live 回答按 scenario 确定性评分（只出分，boundary 零容忍）
-                    from .multidim import _assistant_text as _md_assistant_text
-
-                    candidate_answers = {}
-                    for fixture in recording.fixtures:
-                        if fixture.get("agent_key") == "pretriage-candidate-v2":
-                            candidate_answers[str(fixture.get("case_id"))] = _md_assistant_text(fixture.get("raw_output"))
+                    # 多维测试集 live：直接调用模型（不走 pretriage 的 Judge），按 scenario 确定性评分
+                    candidate_answers: dict[str, str] = {}
+                    external_call_count = 0
+                    for case in bundle.cases:
+                        if should_cancel and should_cancel():
+                            raise LiveRunCancelled()
+                        messages: list[dict[str, str]] = [{"role": "system", "content": payload.candidate_prompt}]
+                        answer = ""
+                        for turn in case["input"]["turns"]:
+                            messages.append({"role": "user", "content": str(turn)})
+                            if on_event:
+                                on_event({"type": "item_started", "case_id": case["case_id"], "role": "candidate"})
+                            result = client.complete(messages=messages, max_tokens=1024)
+                            content = getattr(result, "content", "") or ""
+                            if not isinstance(content, str):
+                                content = str(content)
+                            answer = content
+                            messages.append({"role": "assistant", "content": answer})
+                            external_call_count += 1
+                            if on_event:
+                                on_event({"type": "item_completed", "case_id": case["case_id"], "role": "candidate"})
+                        candidate_answers[case["case_id"]] = answer
                     md_report = evaluate_multidim(
                         bundle,
                         candidate_answers=candidate_answers,
@@ -772,19 +777,27 @@ def create_app(
                     md_report["run_id"] = run_id
                     md_report["generated_at"] = utc_now()
                     md_report["idempotent_replay"] = False
-                    md_report.setdefault("summary", {})["external_call_count"] = recording.external_call_count
+                    md_report.setdefault("summary", {})["external_call_count"] = external_call_count
                     md_report.setdefault("provenance", {}).update(
                         {
-                            "external_call_count": recording.external_call_count,
-                            "artifact": recording.artifact,
+                            "external_call_count": external_call_count,
+                            "artifact": {"mode": "live", "model": live_model, "testset_key": bundle.testset_key},
                             "run_id": run_id,
                             "request_hash": submission_hash,
                         }
                     )
-                    md_report["provenance"]["external_call_count"] = recording.external_call_count
-                    # 兼容 pretriage live 的响应形态：summary.p0_count 等由 evaluate_multidim 已给出 boundary 结论
                     report = md_report
                 else:
+                    recording = record_live(
+                        bundle,
+                        baseline_prompt=payload.baseline_prompt,
+                        candidate_prompt=payload.candidate_prompt,
+                        model=live_model,
+                        client=client,
+                        on_event=on_event,
+                        should_cancel=should_cancel,
+                        concurrency=settings.live_concurrency,
+                    )
                     report = run_evaluation(
                         bundle,
                         db_path=settings.db_path,
@@ -803,10 +816,16 @@ def create_app(
                 completed = connect(settings.db_path)
                 try:
                     with completed:
-                        completed.execute(
-                            "UPDATE live_submissions SET status = ?, run_id = ?, updated_at = ? WHERE actor_id = ? AND idempotency_key = ?",
-                            ("completed", report["run_id"], utc_now(), "demo-operator", key),
-                        )
+                        if "scenarios" in bundle.manifest:
+                            completed.execute(
+                                "UPDATE live_submissions SET status = ?, updated_at = ? WHERE actor_id = ? AND idempotency_key = ?",
+                                ("completed", utc_now(), "demo-operator", key),
+                            )
+                        else:
+                            completed.execute(
+                                "UPDATE live_submissions SET status = ?, run_id = ?, updated_at = ? WHERE actor_id = ? AND idempotency_key = ?",
+                                ("completed", report["run_id"], utc_now(), "demo-operator", key),
+                            )
                 finally:
                     completed.close()
                 return report
