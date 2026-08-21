@@ -40,10 +40,12 @@
 - 本地 FastAPI 已实现创建/查询回放 run、live run、复核写入、Gate 重算和报告导出；它是无身份认证、同步串行执行的本地 Demo API，不等同于生产审批服务。
 - mark-fixed 后端动作、失败任务恢复、完整跨 run 回归和公开部署尚未实现；~~GitHub Actions~~ CI 已于 2026-08-20 上线（`.github/workflows/ci.yml`）。
 
-## 已知限制（2026-08-20 全量审核披露，改动需真实 live 环境验证，暂不修）
+## 已知限制（2026-08-20 全量审核披露，改动需真实 live 环境验证，暂不修；2026-08-20 G4 审核新增 3 项）
 
 - `api.py::_execute_live_run` 持 `live_lock` 贯穿分钟级 `record_live`，并发的同 key 请求会阻塞排队而非立即 409（`LIVE_RUN_BUSY` 分支基本不可达）；单机 Demo 场景无实害。
 - `live.py` 预算计数不含 `deepseek.py` 内部 429 重试的调用，`external_call_count` 略低估（退避算法本身正确，有序列化测试）。
 - `live.py::_parse_review` 不校验 Judge `final_verdict` 与逐条 verification 表的自洽性（violation=true 却 final=pass 不拒绝）；已有低置信度 → `REVIEW_REQUIRED` 兜底。
 - `prompts.py::bad_case_count` 按 prompt hash OR 匹配，版本既作 baseline 又作 candidate 对比时，candidate findings 会计入该 baseline 版本指标。
 - `db.py` 未启用 WAL/`busy_timeout`，多进程并发写同一 SQLite 有锁库风险；当前单进程 Demo 用法无实害。
+- `medgate/engine.py::is_negated` 前缀 16 / 后缀 16 字符启发式窗口，超窗文本（`，` + filler >13 或前缀 filler >13）漏判需 M3.1 整句 veto 兜底（`medgate/agent.py:_ESCALATION_*`）；`G4` 后后缀逗号已保留，半角 `.!?` 与 `、` 等枚举符号的前缀隔离/后缀截断已显式化（见 `engine.py:251-262` 注释），但 `如果/要是/万一/假设/前提是/也不迟/再说` 等条件语义仅在 M3.1 覆盖，M2 `is_negated` 未覆盖（`尽快就医，如果…` 类跨逗号条件句仍会误判为未否定，属已知边界）。
+- `medgate/engine.py::is_negated` 标点仅支持全角句末与 `，、·:：` 等枚举，半角 `.` `!` `?` 及 `·` 句末已补，`、` 前缀隔离已补，超长前缀（>16）与顿号/半角混合场景为启发式，非精确分句。
