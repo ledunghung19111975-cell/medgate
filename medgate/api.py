@@ -159,6 +159,9 @@ def _live_response(report: dict[str, Any]) -> dict[str, Any]:
         "provenance": report["provenance"],
         "comparison": report.get("comparison", []),
         "evaluations": report.get("evaluations", []),
+        "results": report.get("results", []),
+        "scenario_scores": report.get("scenario_scores"),
+        "testset_key": report.get("testset_key") or report.get("provenance", {}).get("testset_key") or "",
         "report_snapshot_id": report.get("report_snapshot_id"),
         "report": report,
     }
