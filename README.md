@@ -16,7 +16,7 @@ MedGate 是一个**医疗 AI 发布门禁**的本地演示项目：对同一批�
 
 | 阶段 | 状态 |
 | --- | --- |
-| M1 五页面本地原型（`prototype/index.html`） | ✅ 离线可复现 |
+| M1 六页面本地原型（`prototype/index.html`，总览/测评集详情/多维测试集/评测详情/病例详情/发布门禁） | ✅ 离线可复现 |
 | T0 版本化资产（12 病例、24 份双版本 fixture、manifest 校验） | ✅ 离线可复现 |
 | M2 离线评测 Runner / CLI / SQLite（无外连、无密钥） | ✅ 离线可复现 |
 | 本地 FastAPI + 手动提示词 live run（`deepseek-v4-flash`） | ✅ 本机已验（Fake Client 链路离线可复现） |
