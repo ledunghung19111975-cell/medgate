@@ -749,39 +749,84 @@ def create_app(
         try:
             with app.state.live_lock:
                 if "scenarios" in bundle.manifest:
-                    # 多维测试集 live：直接调用模型（不走 pretriage 的 Judge），按 scenario 确定性评分
-                    # 为保持与 pretriage 的进度事件一致，触发 run_started 且 baseline/candidate 各做一次
+                    # 多维 live：仅 candidate 并发，进度事件带完成计数（修复长时间等待无进度）
+                    total_items = len(bundle.cases)
+                    total_calls = sum(len(c["input"]["turns"]) for c in bundle.cases)
                     if on_event:
                         on_event({
                             "type": "run_started",
                             "case_count": len(bundle.cases),
-                            "total_items": len(bundle.cases) * 2,
-                            "total_calls": sum(len(c["input"]["turns"]) for c in bundle.cases) * 2,
+                            "total_items": total_items,
+                            "total_calls": total_calls,
                             "model": live_model,
+                            "concurrency": settings.live_concurrency,
                         })
                     candidate_answers: dict[str, str] = {}
                     external_call_count = 0
-                    for role, prompt in [("baseline", payload.baseline_prompt), ("candidate", payload.candidate_prompt)]:
-                        for case in bundle.cases:
+                    completed_items = 0
+                    lock = threading.Lock()
+                    errors: list[BaseException] = []
+
+                    from concurrent.futures import ThreadPoolExecutor
+
+                    def _run_one(case: dict[str, Any]) -> None:
+                        nonlocal external_call_count, completed_items
+                        if should_cancel and should_cancel():
+                            raise LiveRunCancelled()
+                        if on_event:
+                            with lock:
+                                cur_items = completed_items
+                                cur_calls = external_call_count
+                            on_event({
+                                "type": "item_started",
+                                "case_id": case["case_id"],
+                                "role": "candidate",
+                                "completed_items": cur_items,
+                                "total_items": total_items,
+                                "completed_calls": cur_calls,
+                                "total_calls": total_calls,
+                            })
+                        messages: list[dict[str, str]] = [{"role": "system", "content": payload.candidate_prompt}]
+                        answer = ""
+                        local_calls = 0
+                        for turn in case["input"]["turns"]:
                             if should_cancel and should_cancel():
                                 raise LiveRunCancelled()
-                            messages: list[dict[str, str]] = [{"role": "system", "content": prompt}]
-                            answer = ""
-                            for turn in case["input"]["turns"]:
-                                messages.append({"role": "user", "content": str(turn)})
-                                if on_event:
-                                    on_event({"type": "item_started", "case_id": case["case_id"], "role": role})
-                                result = client.complete(messages=messages, max_tokens=1024)
-                                content = getattr(result, "content", "") or ""
-                                if not isinstance(content, str):
-                                    content = str(content)
-                                answer = content
-                                messages.append({"role": "assistant", "content": answer})
-                                external_call_count += 1
-                                if on_event:
-                                    on_event({"type": "item_completed", "case_id": case["case_id"], "role": role, "turns": len(case["input"]["turns"])})
-                            if role == "candidate":
-                                candidate_answers[case["case_id"]] = answer
+                            messages.append({"role": "user", "content": str(turn)})
+                            result = client.complete(messages=messages, max_tokens=1024)
+                            content = getattr(result, "content", "") or ""
+                            if not isinstance(content, str):
+                                content = str(content)
+                            answer = content
+                            messages.append({"role": "assistant", "content": answer})
+                            local_calls += 1
+                        with lock:
+                            candidate_answers[case["case_id"]] = answer
+                            external_call_count += local_calls
+                            completed_items += 1
+                            cur_items = completed_items
+                            cur_calls = external_call_count
+                        if on_event:
+                            on_event({
+                                "type": "item_completed",
+                                "case_id": case["case_id"],
+                                "role": "candidate",
+                                "completed_items": cur_items,
+                                "total_items": total_items,
+                                "completed_calls": cur_calls,
+                                "total_calls": total_calls,
+                                "turns": len(case["input"]["turns"]),
+                            })
+
+                    with ThreadPoolExecutor(max_workers=max(1, settings.live_concurrency)) as pool:
+                        futures = [pool.submit(_run_one, case) for case in bundle.cases]
+                        for fut in futures:
+                            exc = fut.exception()
+                            if exc:
+                                errors.append(exc)
+                    if errors:
+                        cancels = [e for e in errors if isinstance(e, LiveRunCancelled)]
+                        raise cancels[0] if cancels else errors[0]
                     md_report = evaluate_multidim(
                         bundle,
                         candidate_answers=candidate_answers,

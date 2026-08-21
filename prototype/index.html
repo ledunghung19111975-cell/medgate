@@ -1789,6 +1789,14 @@
         } else if (eventType === "call_completed") {
           progress.completedCalls = Number(data.completed_calls || progress.completedCalls);
           progress.totalCalls = Number(data.total_calls || progress.totalCalls);
+        } else if (eventType === "item_started") {
+          progress.phase = "正在生成模型回答";
+          progress.role = String(data.role || progress.role);
+          progress.caseId = String(data.case_id || progress.caseId);
+          progress.completedItems = Number(data.completed_items || progress.completedItems);
+          progress.totalItems = Number(data.total_items || progress.totalItems);
+          progress.completedCalls = Number(data.completed_calls || progress.completedCalls);
+          progress.totalCalls = Number(data.total_calls || progress.totalCalls);
         } else if (eventType === "item_completed") {
           progress.phase = "已完成一组版本病例";
           progress.role = String(data.role || progress.role);
