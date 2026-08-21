@@ -113,7 +113,7 @@ LICENSE           本仓库 MIT；complex-v1 改写来源 Apache-2.0（副本见
 
 ## 尚未实现（非缺陷，属后续里程碑）
 
-- live 路径的测试集参数化（`/api/v1/live-runs` 当前只支持 `pretriage-safety-v1`；P1-6 live 冒烟与 P2-1 大规模真实运行的前置）
+- 多维测试集的大规模真实验收（P2-1，需用户 Key 外发；离线与 live 已接入 `multidim-v1 82 + complex-v1 38 + multi-turn-v1 30`，`--test-set` 参数化已完成，见 `14_开发计划` P1-6）
 - `recommend_services` 推荐 Tool（M3.3）与正式 repeated 回归、异步/SSE（M3.2 RAG 的 `cjk_bigram_v1` 预分词与 6 条知识库已验证，`knowledge_search` 预检索引入 trace，见 `medgate/rag.py` 与 `assets/knowledge/`）
 - 公开脱敏导出
 - 公开静态部署（已取消，2026-08-20 用户裁决；CI 见页首徽章）

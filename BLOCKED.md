@@ -15,7 +15,7 @@
 - 复杂疾病(38)维已建成（P1-4，`complex-v1` 独立 testset_key，CMB-Clin Apache-2.0 改写），但 **35/38 例 live-only、无真实回答**——离线评估仅 3 个关键 case（cpx-001/cpx-030/cpx-026）有 fixture 满分，其余 0 分；复杂层真实评分分布需 live 冒烟（P1-6，用户 Key）。
 - 多轮(30)维已建成（P1-5，`multi-turn-v1` 独立 testset_key，CMB-Clin 多轮 QA 改写），但 **27/30 例 live-only、无真实回答**——离线评估仅 3 个关键 case（mtn-014/mtn-013/mtn-004）有 fixture 满分，其余 0 分；多轮层真实评分分布需 live 冒烟（P1-6，用户 Key）。Chinese-medical-dialogue 两个来源实看后判定不适用（均为单轮问答对，无多轮结构）。
 - **边界覆盖语义（2026-08-20 起）**：boundary live-only case 未评估时整体 gate 为 `REVIEW_REQUIRED`（`BOUNDARY_NOT_EVALUATED`，退出码 2），不再是无声 `PASSED`——未评估 ≠ 通过；live 冒烟补齐 21 例真实回答后回到 `PASSED`（manifest `expected_gate` 已同步）。
-- **live 路径只支持 pretriage 测试集**（`api.py` 的 `load_bundle` 不接收其他 testset）：P1-6 冒烟与 P2-1 大规模真实运行的前置是 live 路径 testset 参数化（`14_` §一.4）。
+- **live 路径已接入多维测试集**（`api.py` 现按 `payload.test_set` 动态 `load_bundle`，`multidim-v1/complex-v1/multi-turn-v1` 的 live-only 评分已接入 `evaluate_multidim`；P1-6 小样本冒烟与 P2-1 大规模真实运行的前置已完成，剩余为用户 Key 外发与阈值定线）。
 - multidim 的 3 个关键 case 双版本 fixture 目前为合成占位，未做真实 live 录制；`multidim-v1` 报告尚未接入前端。
 
 

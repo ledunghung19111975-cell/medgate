@@ -615,6 +615,25 @@
       const LIVE_TEST_SET = "pretriage-safety-v1";
       const LIVE_MODEL = "deepseek-v4-flash";
       const API_KEY_HEADER = "X-DeepSeek-API-Key";
+      const AVAILABLE_LIVE_TESTSETS = [
+        { key: "pretriage-safety-v1", title: "预问诊安全集 v1（12 例，P0 门禁）" },
+        { key: "multidim-v1", title: "多维·FAQ与边界（82 例，边界零容忍）" },
+        { key: "complex-v1", title: "多维·复杂疾病（38 例，CMB-Clin 改写）" },
+        { key: "multi-turn-v1", title: "多维·多轮对话（30 例，跨轮一致）" }
+      ];
+      function testsetAssetPath(key) {
+        if (key === "pretriage-safety-v1") return "/assets/testsets/pretriage-safety-v1.json";
+        return "/assets/testsets/" + key + ".json";
+      }
+      function manifestAssetPath(key) {
+        if (key === "pretriage-safety-v1") return "/assets/manifest.json";
+        return "/assets/manifests/" + key + ".json";
+      }
+      function testsetDisplayTitle(key) {
+        const found = AVAILABLE_LIVE_TESTSETS.find((item) => item.key === key);
+        return found ? found.title : key;
+      }
+
       const MULTIDIM_TESTSETS = [
         { key: "multidim-v1", title: "多维·FAQ与边界", path: "/assets/testsets/multidim-v1.json", manifest: "/assets/manifests/multidim-v1.json" },
         { key: "complex-v1", title: "多维·复杂疾病", path: "/assets/testsets/complex-v1.json", manifest: "/assets/manifests/complex-v1.json" },
@@ -750,6 +769,14 @@
       }
 
       function buildFromLiveResult(result) {
+        // 多维 live：报告含 scenario_scores/results，无 comparison/evaluations；仅展示门禁与分层分数
+        if (result.scenario_scores || Array.isArray(result.results)) {
+          // 将多维 live 结果暂存，供多维页展示；仍保留 activeRun 供总览/门禁页展示门禁
+          state.multidim.liveResult = result;
+          // 为兼容总览与门禁页的 activeRun 展示，保留最小必要字段
+          // 不重建 pretriage 的 cases/detail，避免抛错
+          return;
+        }
         const comparison = Array.isArray(result.comparison) ? result.comparison : [];
         const evaluations = Array.isArray(result.evaluations) ? result.evaluations : [];
         if (!comparison.length) throw new Error("真实运行没有返回病例结果");
@@ -865,18 +892,37 @@
       }
 
       async function loadAssets() {
-        const testset = await fetchAsset(ASSET_TESTSET);
+        const key = state.testset.key;
+        const testset = await fetchAsset(testsetAssetPath(key));
         if (!Array.isArray(testset)) throw new Error("资产格式无效：测评集应为数组");
         buildTestset(testset);
+        testsetTitle = testsetDisplayTitle(key);
         // 规则目录与资产清单只用于测评集详情页，加载失败时降级提示，不阻断空状态启动。
         const [rulesResult, manifestResult] = await Promise.allSettled([
           fetchAsset(RULES_ENDPOINT),
-          fetchAsset(ASSET_MANIFEST)
+          fetchAsset(manifestAssetPath(key))
         ]);
         const rulesValue = rulesResult.status === "fulfilled" ? rulesResult.value : null;
         const manifestValue = manifestResult.status === "fulfilled" ? manifestResult.value : null;
         ruleCatalog = validRuleCatalog(rulesValue) ? rulesValue : null;
         manifestInfo = manifestValue && typeof manifestValue === "object" && !Array.isArray(manifestValue) ? manifestValue : null;
+      }
+
+      async function switchLiveTestset(newKey) {
+        if (newKey === state.testset.key) return;
+        state.testset.key = newKey;
+        state.testset.selectedCaseIds = [];
+        state.testsetDraftIds = [];
+        testsetTitle = testsetDisplayTitle(newKey);
+        state.activeRun = null;
+        state.selectedCase = null;
+        try {
+          await loadAssets();
+        } catch (error) {
+          console.error("切换测评集失败", error);
+          showToast("切换测评集失败: " + String(error.message || error));
+        }
+        render();
       }
 
       async function loadMultidimAssets() {
@@ -896,7 +942,7 @@
         render();
       }
 
-      const testsetTitle = "预问诊安全集 v1";
+      let testsetTitle = testsetDisplayTitle(LIVE_TEST_SET);
       const routeNames = { overview: "总览", rules: "测评集详情", evaluation: "评测详情", case: "病例详情", gate: "发布门禁", prompts: "提示词版本", multidim: "多维测试集" };
       const currentRun = () => state.activeRun;
       const runModeLabel = () => "真实调用";
@@ -1028,11 +1074,17 @@
 
       function testsetCard() {
         const selectedCount = state.testset.selectedCaseIds.length;
+        const options = AVAILABLE_LIVE_TESTSETS.map((item) => "<option value='" + escapeHtml(item.key) + "' " + (item.key === state.testset.key ? "selected" : "") + ">" + escapeHtml(item.title) + "</option>").join("");
+        const isMultidim = state.testset.key !== "pretriage-safety-v1";
+        const hintText = isMultidim
+          ? "多维测试集仅做确定性评分（FAQ/复杂/多轮只出分，边界零容忍），真实评测将按 scenario 评分并返回门禁；离线回放同样可用。"
+          : "可调整本次真实评测使用的病例；选择会随请求发送到本机服务。";
         return "<section class='section-card testset-card'>"
-          + "<div class='section-head'><div><h2>当前测评集</h2><div class='section-kicker'>运行时使用的病例范围" + hint("可调整本次真实评测使用的病例；选择会随请求发送到本机服务。") + "</div></div>"
+          + "<div class='section-head'><div><h2>当前测评集</h2><div class='section-kicker'>运行时使用的病例范围" + hint(hintText) + "</div></div>"
           + "<button class='btn ghost small' data-action='open-testset-modal'>调整测评集</button></div>"
           + "<div class='card-pad'><div class='testset-summary'><div><div class='eyebrow'>TEST SET</div><div class='snapshot-id'>" + testsetTitle + "</div><div class='testset-key'>" + escapeHtml(state.testset.key) + "</div></div><div class='testset-selection'><span class='testset-selection-dot'></span>已选 " + selectedCount + " / " + testsetEntries.length + " 例</div></div>"
-          + "<div class='status-list'><div class='status-line'><span>病例总数</span><strong>" + testsetEntries.length + " 例</strong></div><div class='status-line'><span>本次选择</span><span class='value'>" + selectedCount + " 例</span></div><div class='status-line'><span>配置状态</span><span class='value'>当前页面已加载</span></div></div></div></section>";
+          + "<div class='field' style='margin-top:12px'><label for='live-testset-select' style='font-size:11px;color:var(--muted)'>切换测评集（支持多维 150 例）</label><select id='live-testset-select' data-action='switch-testset' class='select-compact' style='width:100%;margin-top:4px'>" + options + "</select></div>"
+          + "<div class='status-list' style='margin-top:12px'><div class='status-line'><span>病例总数</span><strong>" + testsetEntries.length + " 例</strong></div><div class='status-line'><span>本次选择</span><span class='value'>" + selectedCount + " 例</span></div><div class='status-line'><span>配置状态</span><span class='value'>当前页面已加载</span></div></div></div></section>";
       }
 
       function emptyRunCard(copy = "先选择测评集，再运行 Baseline 与 Candidate 两版提示词。") {
@@ -1568,7 +1620,15 @@
         const total = MULTIDIM_TESTSETS.reduce((sum, item) => sum + ((mEntries[item.key] && mEntries[item.key].cases.length) || 0), 0);
         const scenarioLabel = { faq: "FAQ", complex: "复杂", multi_turn: "多轮", boundary: "边界" };
         const scenarioColor = { faq: "var(--blue)", complex: "var(--amber)", multi_turn: "var(--teal)", boundary: "var(--red)" };
-        let mHtml = "<div class='page'>" + pageHeader("多维测试集 · " + total + " 例", "多维测试集", "FAQ 60 + 边界 22 + 复杂 38 + 多轮 30,四层只读展示。边界层零容忍(P0),其余三层只出分不判。合成样例,未经执业医师复核。", "<button class='btn' data-route='overview'>← 返回总览</button><button class='btn' data-route='rules'>查看预问诊安全集 →</button>") + "<div class='summary-strip'><span class='summary-pill'>总计 <strong>" + total + " 例</strong></span>" + MULTIDIM_TESTSETS.map((item) => {
+        let liveBanner = "";
+        if (state.multidim.liveResult && state.multidim.liveResult.gate) {
+          const live = state.multidim.liveResult;
+          const gate = live.gate.state || "—";
+          const testKey = live.testset_key || (live.provenance && live.provenance.testset_key) || "";
+          const scores = live.scenario_scores ? Object.entries(live.scenario_scores).map(([k, v]) => escapeHtml(k) + ":" + (v.avg_score !== null ? v.avg_score : "—")).join(" · ") : "";
+          liveBanner = "<section class='section-card' style='border-color:var(--teal);background:var(--teal-soft)'><div class='section-head'><div><h2>最近真实评测</h2><div class='section-kicker'>" + escapeHtml(testKey) + " · Gate " + escapeHtml(gate) + (scores ? " · " + scores : "") + "</div></div>" + statusChip(gate, gate === "PASSED" ? "passed" : gate === "REVIEW_REQUIRED" ? "review" : gate === "BLOCKED" ? "blocked" : "neutral") + "</div><div class='card-pad'><div class='status-list'><div class='status-line'><span>病例数</span><strong>" + (live.summary?.case_count || "—") + "</strong></div><div class='status-line'><span>外部调用</span><span class='value'>" + (live.summary?.external_call_count ?? live.provenance?.external_call_count ?? "—") + "</span></div><div class='status-line'><span>报告 ID</span><span class='value mono'>" + escapeHtml(live.run_id || "") + "</span></div></div></div></section>";
+        }
+        let mHtml = "<div class='page'>" + pageHeader("多维测试集 · " + total + " 例", "多维测试集", "FAQ 60 + 边界 22 + 复杂 38 + 多轮 30,四层只读展示。边界层零容忍(P0),其余三层只出分不判。合成样例,未经执业医师复核。", "<button class='btn' data-route='overview'>← 返回总览</button><button class='btn' data-route='rules'>查看预问诊安全集 →</button>") + liveBanner + "<div class='summary-strip'><span class='summary-pill'>总计 <strong>" + total + " 例</strong></span>" + MULTIDIM_TESTSETS.map((item) => {
           const e = mEntries[item.key];
           const count = e ? e.cases.length : 0;
           return "<span class='summary-pill'>" + escapeHtml(item.title) + " <strong>" + count + " 例</strong></span>";
@@ -1893,8 +1953,13 @@
           return;
         }
         closeModal();
-        go("gate");
-        showToast("真实评测已完成：" + result.gate);
+        if (result.scenario_scores || result.results) {
+          go("multidim");
+          showToast("真实评测已完成（" + (result.testset_key || result.provenance?.testset_key || state.testset.key) + "）· Gate=" + result.gate);
+        } else {
+          go("gate");
+          showToast("真实评测已完成：" + result.gate);
+        }
       }
 
       function renderModal() {
@@ -2036,6 +2101,11 @@
       });
 
       document.addEventListener("change", (event) => {
+        if (event.target.dataset.action === "switch-testset") {
+          const newKey = event.target.value;
+          switchLiveTestset(newKey);
+          return;
+        }
         if (event.target.dataset.filter === "severity") { state.severity = event.target.value; updateEvaluationTable(); }
         if (event.target.dataset.filter === "dimension") { state.dimension = event.target.value; updateEvaluationTable(); }
         if (event.target.dataset.filter === "review") { state.review = event.target.value; updateEvaluationTable(); }

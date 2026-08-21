@@ -81,7 +81,11 @@
 - [x] **验证**：全量 unittest 129 → 134（新增 complex 评分 3 + bundle/离线报告 2）；`medgate validate --test-set complex-v1` status=ok；complex-v1 离线 run 退出码 0（PASSED，fixture 3 例满分）；pretriage 离线回放退出码仍 1（零回归）；node 静态四脚本全过。
 - [ ] **未覆盖**：38 例中 35 例 live-only（无真实回答，离线按 0 分）；复杂层真实评分分布需 live 冒烟（P1-6，用户 Key）；多轮(30)维仍占位；multidim 报告未接前端；CMB-Clin 病例为真实临床病例改写，**未经执业医师复核**，期望回答中的用药/检查建议仅作门禁叙事，不得用于临床决策。
 
+## P1-6 多维 live 接入（2026-08-20，用户指令“修改一下”）
 
+- [x] **后端**：`medgate/api.py` 按 `payload.test_set` 动态 `load_bundle(testset_key=…)`，离线 `POST /api/v1/runs` 与 live `POST /api/v1/live-runs` 均已支持 `multidim-v1/complex-v1/multi-turn-v1`（`--test-set` 参数化完成）；`_execute_live_run` 对 `scenarios` 存在时走 `evaluate_multidim(candidate_answers=live)` 并补 `run_id/external_call_count` 以兼容前端 `gate/summary` 展示
+- [x] **前端**：`prototype/index.html` 新增 `AVAILABLE_LIVE_TESTSETS` 4 项、`testsetAssetPath/manifestAssetPath/testsetDisplayTitle` 助手、`let testsetTitle` 动态、`loadAssets` 按 `state.testset.key` 拉取、`switchLiveTestset` 清空旧运行并重载、`testsetCard` 下拉（`data-action=switch-testset`）与 `change` 监听、`buildFromLiveResult` 兼容 `scenario_scores/results` 且 `multidimView` 新增 `liveResult` 横幅
+- [x] **验证**：`155/155`，`validate` 四集 `ok`，`POST /api/v1/runs` `multidim-v1` `201 REVIEW_REQUIRED`（2 例 `PASSED`）、`POST /api/v1/live-runs` `multidim-v1` 不再 `422`（无 Key `503`、有 Key `502` 鉴权，证明 `test_set` 已接受），`node` 四脚本 `ok`
 
 ## P0 终面演示就绪检查（2026-08-18，代码冻结期，未改动任何代码/规则/资产）
 

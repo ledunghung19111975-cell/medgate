@@ -44,6 +44,7 @@ from .db import connect
 from .deepseek import ChatClient, DEEPSEEK_MODEL, DeepSeekClient, DeepSeekError
 from .engine import recalculate_gate, record_review, rule_catalog, run_evaluation, run_offline, utc_now
 from .live import LiveRunCancelled, live_submission_hash, record_live, run_verification_review
+from .multidim import evaluate_multidim
 from . import prompts as prompt_versions
 
 
@@ -604,20 +605,33 @@ def create_app(
             raise _error("IDEMPOTENCY_KEY_REQUIRED", "必须提供 Idempotency-Key", 400)
         payload = payload or RunRequest()
         try:
-            bundle = load_bundle(settings.project_root)
-            if payload.test_set != bundle.testset_key:
-                raise _error("UNKNOWN_TEST_SET", f"未知测试集：{payload.test_set}")
+            bundle = load_bundle(settings.project_root, testset_key=payload.test_set)
             bundle = select_case_subset(bundle, payload.case_ids)
-            report = run_offline(
-                bundle,
-                db_path=settings.db_path,
-                report_path=settings.project_root / "artifacts" / f"gate-{hashlib.sha256(idempotency_key.encode()).hexdigest()[:16]}.json",
-                baseline_key=payload.baseline,
-                candidate_key=payload.candidate,
-                idempotency_key=idempotency_key.strip(),
-                review_pack_path=_review_pack_path(settings, payload.review_pack),
-                case_ids=payload.case_ids,
-            )
+            if "scenarios" in bundle.manifest:
+                # 多维测试集离线评估：独立路径（复用 evaluate_multidim，不落 pretriage SQLite finding）
+                report = evaluate_multidim(
+                    bundle,
+                    report_path=settings.project_root / "artifacts" / f"gate-{hashlib.sha256(idempotency_key.encode()).hexdigest()[:16]}.json",
+                )
+                # 与 pretriage 离线报告保持最小响应形态一致，便于前端与 CI 断言
+                if "run_id" not in report:
+                    report["run_id"] = f"run-{uuid.uuid4().hex[:8]}"
+                    report["generated_at"] = utc_now()
+                    report["idempotent_replay"] = False
+                    # 补齐 summary.provenance 供前端展示
+                    report.setdefault("summary", {})
+                    report.setdefault("provenance", {})
+            else:
+                report = run_offline(
+                    bundle,
+                    db_path=settings.db_path,
+                    report_path=settings.project_root / "artifacts" / f"gate-{hashlib.sha256(idempotency_key.encode()).hexdigest()[:16]}.json",
+                    baseline_key=payload.baseline,
+                    candidate_key=payload.candidate,
+                    idempotency_key=idempotency_key.strip(),
+                    review_pack_path=_review_pack_path(settings, payload.review_pack),
+                    case_ids=payload.case_ids,
+                )
         except (AssetError, ValueError, OSError) as exc:
             raise _error("RUN_REJECTED", str(exc), 422) from exc
         replayed = bool(report.get("idempotent_replay"))
@@ -651,9 +665,7 @@ def create_app(
         deepseek_api_key: str | None,
     ) -> tuple[Any, str, str, ChatClient | None, dict[str, Any] | None]:
         key = _validate_live_request(payload, idempotency_key)
-        bundle = load_bundle(settings.project_root)
-        if payload.test_set != bundle.testset_key:
-            raise _error("UNKNOWN_TEST_SET", f"未知测试集：{payload.test_set}")
+        bundle = load_bundle(settings.project_root, testset_key=payload.test_set)
         bundle = select_case_subset(bundle, payload.case_ids)
         submission_hash = live_submission_hash(
             bundle,
@@ -743,21 +755,51 @@ def create_app(
                     should_cancel=should_cancel,
                     concurrency=settings.live_concurrency,
                 )
-                report = run_evaluation(
-                    bundle,
-                    db_path=settings.db_path,
-                    report_path=settings.db_path.parent / f"live-gate-{hashlib.sha256(key.encode()).hexdigest()[:16]}.json",
-                    baseline_key="pretriage-baseline-v1",
-                    candidate_key="pretriage-candidate-v2",
-                    idempotency_key=key,
-                    fixtures=recording.fixtures,
-                    fixture_hash=recording.fixture_hash,
-                    artifact=recording.artifact,
-                    external_call_count=recording.external_call_count,
-                    judge_hash_override=recording.judge_hash,
-                    request_hash_override=submission_hash,
-                    case_ids=payload.case_ids,
-                )
+                if "scenarios" in bundle.manifest:
+                    # 多维测试集 live：用 candidate 侧 live 回答按 scenario 确定性评分（只出分，boundary 零容忍）
+                    from .multidim import _assistant_text as _md_assistant_text
+
+                    candidate_answers = {}
+                    for fixture in recording.fixtures:
+                        if fixture.get("agent_key") == "pretriage-candidate-v2":
+                            candidate_answers[str(fixture.get("case_id"))] = _md_assistant_text(fixture.get("raw_output"))
+                    md_report = evaluate_multidim(
+                        bundle,
+                        candidate_answers=candidate_answers,
+                        report_path=settings.db_path.parent / f"live-gate-{hashlib.sha256(key.encode()).hexdigest()[:16]}.json",
+                    )
+                    run_id = f"run-{uuid.uuid4().hex[:8]}"
+                    md_report["run_id"] = run_id
+                    md_report["generated_at"] = utc_now()
+                    md_report["idempotent_replay"] = False
+                    md_report.setdefault("summary", {})["external_call_count"] = recording.external_call_count
+                    md_report.setdefault("provenance", {}).update(
+                        {
+                            "external_call_count": recording.external_call_count,
+                            "artifact": recording.artifact,
+                            "run_id": run_id,
+                            "request_hash": submission_hash,
+                        }
+                    )
+                    md_report["provenance"]["external_call_count"] = recording.external_call_count
+                    # 兼容 pretriage live 的响应形态：summary.p0_count 等由 evaluate_multidim 已给出 boundary 结论
+                    report = md_report
+                else:
+                    report = run_evaluation(
+                        bundle,
+                        db_path=settings.db_path,
+                        report_path=settings.db_path.parent / f"live-gate-{hashlib.sha256(key.encode()).hexdigest()[:16]}.json",
+                        baseline_key="pretriage-baseline-v1",
+                        candidate_key="pretriage-candidate-v2",
+                        idempotency_key=key,
+                        fixtures=recording.fixtures,
+                        fixture_hash=recording.fixture_hash,
+                        artifact=recording.artifact,
+                        external_call_count=recording.external_call_count,
+                        judge_hash_override=recording.judge_hash,
+                        request_hash_override=submission_hash,
+                        case_ids=payload.case_ids,
+                    )
                 completed = connect(settings.db_path)
                 try:
                     with completed:
