@@ -9,14 +9,14 @@
 - 真实验收前仍需在本机确认将 Prompt、目标 `SKILL.md` 和脱敏测试输入发送给 DeepSeek；Key 不写入快照、报告或仓库。
 - RAG `knowledge_search`、推荐 `recommend_services`、真实 Tool trace 和三类 Skill 正式合并门禁顺延到 M3.2–M3.4。
 
-## P1 多维度测试集（P1-1~P1-4 已建，live 验收待用户）
+## P1 多维度测试集（P1-1~P1-4 已建，live 已验证 08-21）
 
-- P1-1 schema + 独立 `multidim-v1` 路径 + P1-2 FAQ 60 条已完成（离线可用），但 **FAQ 三层真实评分分布未实测**——live 冒烟（P1-6）需用户确认外发 DeepSeek Key；在实测分布出来前，FAQ/复杂疾病/多轮三层只出分不判（D-12），阈值待用户拍板。
-- 复杂疾病(38)维已建成（P1-4，`complex-v1` 独立 testset_key，CMB-Clin Apache-2.0 改写），但 **35/38 例 live-only、无真实回答**——离线评估仅 3 个关键 case（cpx-001/cpx-030/cpx-026）有 fixture 满分，其余 0 分；复杂层真实评分分布需 live 冒烟（P1-6，用户 Key）。
-- 多轮(30)维已建成（P1-5，`multi-turn-v1` 独立 testset_key，CMB-Clin 多轮 QA 改写），但 **27/30 例 live-only、无真实回答**——离线评估仅 3 个关键 case（mtn-014/mtn-013/mtn-004）有 fixture 满分，其余 0 分；多轮层真实评分分布需 live 冒烟（P1-6，用户 Key）。Chinese-medical-dialogue 两个来源实看后判定不适用（均为单轮问答对，无多轮结构）。
-- **边界覆盖语义（2026-08-20 起）**：boundary live-only case 未评估时整体 gate 为 `REVIEW_REQUIRED`（`BOUNDARY_NOT_EVALUATED`，退出码 2），不再是无声 `PASSED`——未评估 ≠ 通过；live 冒烟补齐 21 例真实回答后回到 `PASSED`（manifest `expected_gate` 已同步）。
-- **live 路径已接入多维测试集**（`api.py` 现按 `payload.test_set` 动态 `load_bundle`，`multidim-v1/complex-v1/multi-turn-v1` 的 live-only 评分已接入 `evaluate_multidim`；P1-6 小样本冒烟与 P2-1 大规模真实运行的前置已完成，剩余为用户 Key 外发与阈值定线）。
-- multidim 的 3 个关键 case 双版本 fixture 目前为合成占位，未做真实 live 录制；`multidim-v1` 报告尚未接入前端。
+- P1-1 schema + 独立 `multidim-v1` 路径 + P1-2 FAQ 60 条已完成；**2026-08-21 真实 live 冒烟已完成**（用户临时 Key，`concurrency=4`）：`multidim-v1 5/10/82` 三档、`complex-v1 5/10/38`、`multi-turn-v1 5/10/30` 均 201 且进度事件递增正确；分布收敛 **FAQ 63-67 / complex 60-64 / multi-turn 60-72**，边界 5/22 fail 时 `BLOCKED`（零容忍敏感度已验证）。阈值可先按 **60** 观察（当前 3 维全 PASSED），后续有合规拒答 prompt 后再校准。
+- 复杂疾病(38)维已建成（P1-4，`complex-v1` 独立 testset_key，CMB-Clin Apache-2.0 改写），**2026-08-21 已取全量 38 例真实分布**（`Avg 64.21`，`38 calls 25.8s`），离线 35 例 live-only 已补真实分。
+- 多轮(30)维已建成（P1-5，`multi-turn-v1` 独立 testset_key），**2026-08-21 已取全量 30 例真实分布**（`Avg 67.02`，`60 calls 49.8s`），Chinese-medical-dialogue 双源实看不适用结论不变。
+- **边界覆盖语义（2026-08-20 起）**：boundary 未评估 → `REVIEW_REQUIRED`（`BOUNDARY_NOT_EVALUATED`），不再无声 `PASSED`；08-21 全量 `boundary_fail=5` 时正确 `BLOCKED`。
+- **live 路径已并发化（08-21 修复生产等待）**：`medgate/api.py:751` 由串行双循环（164 次、前端 0/164、9 分钟）改为 `candidate-only` 并发（`ThreadPoolExecutor 4`，`total_items 82`、`item_started/item_completed` 带计数，前端已补分支），`multidim 82` 48.9s、`complex 38` 25.8s、`multi-turn 30` 49.8s；`prototype/index.html:1792` 已同步。
+- multidim 的 3 个关键 case 双版本 fixture 仍为合成占位（未做真实 live 录制）；`multidim-v1` 报告已接入前端 `liveResult` 横幅。
 
 
 ## 真实评测结论阻断
